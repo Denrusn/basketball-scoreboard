@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GameSettings, Team, GameEvent } from './types';
 import { ScoreboardHeader } from './components/ScoreboardHeader';
 import { TeamCard } from './components/TeamCard';
@@ -9,8 +9,35 @@ import { RosterStatsModal } from './components/RosterStatsModal';
 import { GameSettingsModal } from './components/GameSettingsModal';
 import { GameSummaryModal } from './components/GameSummaryModal';
 import { BasketballCourtBackground } from './components/BasketballCourtBackground';
-import { RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
+import { RotateCcw, AlertCircle, HelpCircle, ShieldCheck, Check } from 'lucide-react';
 import { playStadiumHorn, playWhistle, playShotClockBuzzer, playScoreBeep } from './utils/audio';
+
+const STORAGE_KEY = 'basketball_live_match_state_v1';
+
+interface SavedState {
+  settings: GameSettings;
+  period: number;
+  homeTeam: Team;
+  awayTeam: Team;
+  gameClockTenths: number;
+  shotClockTenths: number;
+  events: GameEvent[];
+  lastSavedAt: number;
+}
+
+const loadSavedState = (): SavedState | null => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.homeTeam && parsed.awayTeam) {
+      return parsed;
+    }
+  } catch (err) {
+    console.error('Failed to load saved scoreboard state', err);
+  }
+  return null;
+};
 
 const INITIAL_SETTINGS: GameSettings = {
   periodMinutes: 10,
@@ -65,14 +92,20 @@ const INITIAL_AWAY_TEAM: Team = {
 };
 
 export default function App() {
-  const [settings, setSettings] = useState<GameSettings>(INITIAL_SETTINGS);
-  const [period, setPeriod] = useState<number>(1);
-  const [homeTeam, setHomeTeam] = useState<Team>(INITIAL_HOME_TEAM);
-  const [awayTeam, setAwayTeam] = useState<Team>(INITIAL_AWAY_TEAM);
+  const initialSaved = useMemo(() => loadSavedState(), []);
+
+  const [settings, setSettings] = useState<GameSettings>(initialSaved?.settings ?? INITIAL_SETTINGS);
+  const [period, setPeriod] = useState<number>(initialSaved?.period ?? 1);
+  const [homeTeam, setHomeTeam] = useState<Team>(initialSaved?.homeTeam ?? INITIAL_HOME_TEAM);
+  const [awayTeam, setAwayTeam] = useState<Team>(initialSaved?.awayTeam ?? INITIAL_AWAY_TEAM);
 
   // Clocks in tenths (10 tenths = 1 second)
-  const [gameClockTenths, setGameClockTenths] = useState<number>(settings.periodMinutes * 60 * 10);
-  const [shotClockTenths, setShotClockTenths] = useState<number>(settings.shotClockSeconds * 10);
+  const [gameClockTenths, setGameClockTenths] = useState<number>(
+    initialSaved?.gameClockTenths ?? (initialSaved?.settings ?? INITIAL_SETTINGS).periodMinutes * 60 * 10
+  );
+  const [shotClockTenths, setShotClockTenths] = useState<number>(
+    initialSaved?.shotClockTenths ?? (initialSaved?.settings ?? INITIAL_SETTINGS).shotClockSeconds * 10
+  );
   const [isGameClockRunning, setIsGameClockRunning] = useState<boolean>(false);
   const [isShotClockRunning, setIsShotClockRunning] = useState<boolean>(false);
 
@@ -80,7 +113,12 @@ export default function App() {
   const [isStageMode, setIsStageMode] = useState<boolean>(false);
 
   // Events History & Undo Stack
-  const [events, setEvents] = useState<GameEvent[]>([]);
+  const [events, setEvents] = useState<GameEvent[]>(initialSaved?.events ?? []);
+
+  // Notice for restored session
+  const [showRestoreToast, setShowRestoreToast] = useState<boolean>(
+    Boolean(initialSaved && (initialSaved.homeTeam.score > 0 || initialSaved.awayTeam.score > 0 || initialSaved.events.length > 0))
+  );
 
   // Modals
   const [isRosterOpen, setIsRosterOpen] = useState(false);
@@ -88,6 +126,64 @@ export default function App() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isEventsOpen, setIsEventsOpen] = useState(false);
+
+  // Anti-Refresh & Accidental Leave Protection (Browser Dialog)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isGameActive =
+        homeTeam.score > 0 ||
+        awayTeam.score > 0 ||
+        homeTeam.fouls > 0 ||
+        awayTeam.fouls > 0 ||
+        events.length > 0 ||
+        isGameClockRunning ||
+        period > 1 ||
+        gameClockTenths !== settings.periodMinutes * 60 * 10;
+
+      if (isGameActive) {
+        e.preventDefault();
+        // Modern browser standard for showing confirmation before reload/close
+        const confirmationMessage = '比赛正在进行中，刷新页面可能导致当前比分与计时数据丢失，是否确认刷新？';
+        e.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [homeTeam, awayTeam, events, isGameClockRunning, period, gameClockTenths, settings.periodMinutes]);
+
+  // Automatic LocalStorage Persistence Protection
+  useEffect(() => {
+    const isGameModified =
+      homeTeam.score > 0 ||
+      awayTeam.score > 0 ||
+      homeTeam.fouls > 0 ||
+      awayTeam.fouls > 0 ||
+      events.length > 0 ||
+      period > 1 ||
+      gameClockTenths !== settings.periodMinutes * 60 * 10;
+
+    if (isGameModified) {
+      try {
+        const stateToSave: SavedState = {
+          settings,
+          period,
+          homeTeam,
+          awayTeam,
+          gameClockTenths,
+          shotClockTenths,
+          events,
+          lastSavedAt: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      } catch (err) {
+        // Silently catch quota or privacy restriction errors
+      }
+    }
+  }, [settings, period, homeTeam, awayTeam, gameClockTenths, shotClockTenths, events]);
 
   // Format clock for history log
   const formatGameClockDisplay = (tenthsLeft: number) => {
@@ -623,6 +719,12 @@ export default function App() {
 
   // Reset Game
   const handleConfirmResetGame = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+    setShowRestoreToast(false);
     setPeriod(1);
     setHomeTeam({
       ...INITIAL_HOME_TEAM,
@@ -942,6 +1044,46 @@ export default function App() {
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>确认重置</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restored Session Toast */}
+      {showRestoreToast && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-slate-900/95 border border-emerald-500/40 text-slate-200 p-3.5 rounded-2xl shadow-2xl backdrop-blur-md flex items-start gap-3 animate-in slide-in-from-bottom duration-300">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-xs font-bold text-emerald-400">已自动恢复比赛数据</h4>
+              <button
+                onClick={() => setShowRestoreToast(false)}
+                className="text-slate-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-1 leading-snug">
+              已为您恢复上一次比赛的比分与流水，防误触刷新保护已就绪。
+            </p>
+            <div className="flex items-center gap-2 mt-2.5">
+              <button
+                onClick={() => setShowRestoreToast(false)}
+                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[10px] transition-colors cursor-pointer"
+              >
+                继续比赛
+              </button>
+              <button
+                onClick={() => {
+                  setShowRestoreToast(false);
+                  setIsResetConfirmOpen(true);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] transition-colors cursor-pointer"
+              >
+                重新开局
               </button>
             </div>
           </div>

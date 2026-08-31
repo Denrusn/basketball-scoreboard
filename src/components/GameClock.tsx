@@ -73,16 +73,16 @@ export const GameClock: React.FC<GameClockProps> = ({
       </div>
 
       {/* Clock Display (Flex-1 auto fit container, tabular numbers with stable tenths slot) */}
-      <div className="flex-1 min-h-0 py-0.5 md:py-1.5 flex items-center justify-center select-none my-auto w-full">
+      <div className="flex-1 min-h-0 py-0.5 md:py-1.5 lg:py-2 flex items-center justify-center select-none my-auto w-full">
         {isEditing ? (
-          <form onSubmit={handleSaveEdit} className="flex items-center gap-1.5 font-digital text-lg sm:text-2xl md:text-3xl py-0.5">
+          <form onSubmit={handleSaveEdit} className="flex items-center gap-1.5 font-digital text-lg sm:text-2xl md:text-3xl lg:text-4xl py-0.5">
             <input
               type="number"
               min="0"
               max="99"
               value={editMinutes}
               onChange={(e) => setEditMinutes(e.target.value)}
-              className="w-10 sm:w-14 md:w-16 bg-slate-950 border border-amber-400 rounded-lg px-1.5 py-0.5 text-center text-amber-400 focus:outline-none text-xs sm:text-base md:text-lg font-bold tabular-nums"
+              className="w-10 sm:w-14 md:w-16 lg:w-20 bg-slate-950 border border-amber-400 rounded-lg px-1.5 py-0.5 md:py-1 text-center text-amber-400 focus:outline-none text-xs sm:text-base md:text-lg lg:text-2xl font-bold tabular-nums"
             />
             <span className="text-slate-400 font-bold">:</span>
             <input
@@ -91,20 +91,20 @@ export const GameClock: React.FC<GameClockProps> = ({
               max="59"
               value={editSeconds}
               onChange={(e) => setEditSeconds(e.target.value)}
-              className="w-10 sm:w-14 md:w-16 bg-slate-950 border border-amber-400 rounded-lg px-1.5 py-0.5 text-center text-amber-400 focus:outline-none text-xs sm:text-base md:text-lg font-bold tabular-nums"
+              className="w-10 sm:w-14 md:w-16 lg:w-20 bg-slate-950 border border-amber-400 rounded-lg px-1.5 py-0.5 md:py-1 text-center text-amber-400 focus:outline-none text-xs sm:text-base md:text-lg lg:text-2xl font-bold tabular-nums"
             />
             <button
               type="submit"
-              className="ml-1 p-1.5 sm:p-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold cursor-pointer"
+              className="ml-1 p-1.5 sm:p-2 lg:p-2.5 rounded-lg md:rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold cursor-pointer"
               title="保存时间"
             >
-              <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
             </button>
           </form>
         ) : (
           <div className="flex items-baseline font-digital font-black tracking-tight tabular-nums">
             <span
-              className={`mobile-compact-clock text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl leading-none tabular-nums ${
+              className={`clock-fluid-text text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl leading-none tabular-nums ${
                 tenthsLeft === 0
                   ? 'text-rose-500 animate-pulse'
                   : tenthsLeft <= 100
@@ -114,7 +114,7 @@ export const GameClock: React.FC<GameClockProps> = ({
             >
               {formattedMinutes}:{formattedSeconds}
             </span>
-            <span className="w-3 sm:w-6 md:w-8 text-left text-[10px] sm:text-sm md:text-lg lg:text-xl text-amber-400/80 ml-0.5 tabular-nums">
+            <span className="w-3 sm:w-6 md:w-8 lg:w-10 text-left text-[10px] sm:text-sm md:text-lg lg:text-xl xl:text-2xl text-amber-400/80 ml-0.5 tabular-nums">
               {showTenths ? `.${tenths}` : ''}
             </span>
           </div>
@@ -122,10 +122,10 @@ export const GameClock: React.FC<GameClockProps> = ({
       </div>
 
       {/* Main Start / Pause Controls */}
-      <div className="w-full flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
+      <div className="w-full flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 shrink-0">
         <button
           onClick={onToggleRun}
-          className={`mobile-compact-btn flex-1 h-7 sm:h-8 md:h-10 lg:h-12 xl:h-13 px-2 md:px-3 rounded-lg sm:rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 transition-all text-xs sm:text-sm md:text-base shadow-md active:scale-95 whitespace-nowrap cursor-pointer ${
+          className={`mobile-compact-btn flex-1 h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-2 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 transition-all text-xs sm:text-sm md:text-base lg:text-lg shadow-md active:scale-95 whitespace-nowrap cursor-pointer ${
             isRunning
               ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black'
               : 'bg-slate-800 hover:bg-slate-700 text-white border border-white/10'
@@ -133,12 +133,12 @@ export const GameClock: React.FC<GameClockProps> = ({
         >
           {isRunning ? (
             <>
-              <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 fill-current shrink-0" />
+              <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
               <span>暂停</span>
             </>
           ) : (
             <>
-              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 fill-current shrink-0" />
+              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
               <span>开始</span>
             </>
           )}
@@ -147,42 +147,42 @@ export const GameClock: React.FC<GameClockProps> = ({
         <button
           onClick={onResetClock}
           title="重置本节"
-          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-12 xl:h-13 px-1.5 sm:px-2.5 md:px-3 rounded-lg sm:rounded-xl md:rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
+          <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
         </button>
         <button
           onClick={handleStartEdit}
           title="编辑时间"
-          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-12 xl:h-13 px-1.5 sm:px-2.5 md:px-3 rounded-lg sm:rounded-xl md:rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
+          <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
         </button>
       </div>
 
       {/* Quick Trim Buttons */}
-      <div className="w-full grid grid-cols-4 gap-1 md:gap-1.5 mt-1 md:mt-1.5 pt-1 md:pt-1.5 border-t border-white/5 shrink-0">
+      <div className="w-full grid grid-cols-4 gap-1 md:gap-1.5 lg:gap-2 mt-1 md:mt-1.5 lg:mt-2 pt-1 md:pt-1.5 lg:pt-2 border-t border-white/5 shrink-0">
         <button
           onClick={() => onAdjustTime(-10)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           -10s
         </button>
         <button
           onClick={() => onAdjustTime(-1)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           -1s
         </button>
         <button
           onClick={() => onAdjustTime(1)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           +1s
         </button>
         <button
           onClick={() => onAdjustTime(10)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           +10s
         </button>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Volume2, 
   VolumeX, 
@@ -73,6 +73,35 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'period' | 'sound' | 'stats' | 'display' | null>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const wakeLockRef = useRef<any>(null);
+
+  // Screen Wake Lock API helpers to prevent device from sleeping in fullscreen
+  const requestScreenWakeLock = useCallback(async () => {
+    if ('wakeLock' in navigator) {
+      try {
+        if (wakeLockRef.current && !wakeLockRef.current.released) {
+          return;
+        }
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        wakeLockRef.current.addEventListener('release', () => {
+          wakeLockRef.current = null;
+        });
+      } catch (err) {
+        console.warn('Screen wakeLock request failed:', err);
+      }
+    }
+  }, []);
+
+  const releaseScreenWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+      } catch {
+        // Ignore
+      }
+      wakeLockRef.current = null;
+    }
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -95,10 +124,16 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   }, []);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isNowFullscreen = !!document.fullscreenElement;
+    const handleFullscreenChange = async () => {
+      const isNowFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isNowFullscreen);
-      if (!isNowFullscreen) {
+
+      if (isNowFullscreen) {
+        // Request wake lock to prevent display from sleeping
+        await requestScreenWakeLock();
+      } else {
+        // Release wake lock when leaving fullscreen
+        await releaseScreenWakeLock();
         try {
           const screenObj = screen as any;
           if (screenObj.orientation && typeof screenObj.orientation.unlock === 'function') {
@@ -112,13 +147,25 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
       }
     };
 
+    // Re-acquire wake lock if tab becomes visible again while still in fullscreen
+    const handleVisibilityChange = async () => {
+      const isNowFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      if (document.visibilityState === 'visible' && isNowFullscreen) {
+        await requestScreenWakeLock();
+      }
+    };
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseScreenWakeLock();
     };
-  }, []);
+  }, [requestScreenWakeLock, releaseScreenWakeLock]);
 
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
@@ -550,6 +597,15 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                     </span>
                     <span className="text-[10px] text-rose-400">清空比分</span>
                   </button>
+
+                  {/* Data Safety & Anti-refresh indicator */}
+                  <div className="mt-1 pt-1.5 border-t border-white/5 px-1 flex items-center justify-between text-[10px] text-emerald-400/90">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>防刷新与数据保护已开启</span>
+                    </span>
+                    <span className="text-slate-400">本地自动存档</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -559,7 +615,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
           <button
             id="btn-toggle-fullscreen"
             onClick={toggleFullscreen}
-            title={isFullscreen ? '退出全屏' : '全屏并锁定横屏'}
+            title={isFullscreen ? '退出全屏 (恢复系统息屏设置)' : '全屏显示 (已启用屏幕常亮防息屏 & 锁定横屏)'}
             className={`h-7 sm:h-8 md:h-9 lg:h-10 w-7 sm:w-8 md:w-9 lg:w-10 p-0 rounded-lg md:rounded-xl border transition-all shrink-0 flex items-center justify-center cursor-pointer active:scale-95 shadow-sm ${
               isFullscreen
                 ? 'bg-amber-500 text-slate-950 border-amber-400'

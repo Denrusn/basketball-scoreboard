@@ -108,11 +108,11 @@ export const ShotClock: React.FC<ShotClockProps> = ({
       </div>
 
       {/* Clock Display */}
-      <div className="flex-1 min-h-0 py-0.5 md:py-1.5 flex items-center justify-center select-none my-auto w-full">
+      <div className="flex-1 min-h-0 py-0.5 md:py-1.5 lg:py-2 flex items-center justify-center select-none my-auto w-full">
         {enabled ? (
           <div className="flex items-baseline font-digital font-black tracking-tight tabular-nums">
             <span
-              className={`mobile-compact-clock text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl leading-none tabular-nums ${
+              className={`shot-clock-fluid-text text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl leading-none tabular-nums ${
                 isExpired
                   ? 'text-red-500 animate-pulse'
                   : isUrgent
@@ -122,16 +122,16 @@ export const ShotClock: React.FC<ShotClockProps> = ({
             >
               {String(seconds).padStart(2, '0')}
             </span>
-            <span className="w-3 sm:w-6 md:w-8 text-left text-[10px] sm:text-sm md:text-lg lg:text-xl text-rose-400 ml-0.5 tabular-nums">
+            <span className="w-3 sm:w-6 md:w-8 lg:w-10 text-left text-[10px] sm:text-sm md:text-lg lg:text-xl xl:text-2xl text-rose-400 ml-0.5 tabular-nums">
               {seconds < 5 ? `.${tenths}` : ''}
             </span>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center">
-            <span className="font-digital font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-slate-600 leading-none tracking-widest tabular-nums">
+            <span className="font-digital font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl text-slate-600 leading-none tracking-widest tabular-nums">
               --
             </span>
-            <span className="text-[9px] sm:text-[10px] md:text-xs text-slate-400 mt-1">
+            <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-slate-400 mt-1">
               进攻时钟已暂停/禁用
             </span>
           </div>
@@ -139,55 +139,55 @@ export const ShotClock: React.FC<ShotClockProps> = ({
       </div>
 
       {/* Primary Reset Actions */}
-      <div className="w-full grid grid-cols-2 gap-1 sm:gap-1.5 md:gap-2 shrink-0">
+      <div className="w-full grid grid-cols-2 gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 shrink-0">
         <button
           onClick={onReset24}
           title="重置为 24 秒 (若已禁用将自动启用)"
-          className={`mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-12 xl:h-13 px-2 md:px-3 rounded-lg sm:rounded-xl md:rounded-2xl active:scale-95 text-white font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 border transition-all shadow-sm whitespace-nowrap cursor-pointer ${
+          className={`mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-2 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl active:scale-95 text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 border transition-all shadow-sm whitespace-nowrap cursor-pointer ${
             enabled
               ? 'bg-slate-800 hover:bg-slate-700 border-white/10'
               : 'bg-slate-800/60 hover:bg-slate-700 text-slate-300 border-white/5'
           }`}
         >
-          <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
+          <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-amber-400 shrink-0" />
           <span>{defaultShotSeconds}s</span>
         </button>
 
         <button
           onClick={onReset14}
           title="重置为 14 秒 (前场篮板重置，若已禁用将自动启用)"
-          className={`mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-12 xl:h-13 px-2 md:px-3 rounded-lg sm:rounded-xl md:rounded-2xl active:scale-95 text-white font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 border transition-all shadow-sm whitespace-nowrap cursor-pointer ${
+          className={`mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-2 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl active:scale-95 text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 border transition-all shadow-sm whitespace-nowrap cursor-pointer ${
             enabled
               ? 'bg-slate-800 hover:bg-slate-700 border-white/10'
               : 'bg-slate-800/60 hover:bg-slate-700 text-slate-300 border-white/5'
           }`}
         >
-          <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
+          <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 text-amber-400 shrink-0" />
           <span>{reboundShotSeconds}s</span>
         </button>
       </div>
 
       {/* Minor Adjustments */}
-      <div className="w-full flex items-center justify-between gap-1 md:gap-1.5 mt-1 md:mt-1.5 pt-1 md:pt-1.5 border-t border-white/5 shrink-0">
+      <div className="w-full flex items-center justify-between gap-1 md:gap-1.5 lg:gap-2 mt-1 md:mt-1.5 lg:mt-2 pt-1 md:pt-1.5 lg:pt-2 border-t border-white/5 shrink-0">
         <button
           onClick={() => onAdjustTime(-1)}
           disabled={!enabled}
-          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           -1s
         </button>
         <button
-          onClick={() => onToggleRun}
+          onClick={onToggleRun}
           disabled={!enabled}
-          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-bold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-300 transition-colors flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer"
+          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-bold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-300 transition-colors flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer"
         >
-          {isRunning ? <Pause className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" /> : <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 shrink-0" />}
+          {isRunning ? <Pause className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 lg:w-4 lg:h-4 shrink-0" /> : <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 lg:w-4 lg:h-4 shrink-0" />}
           <span>{isRunning ? '暂停' : '启动'}</span>
         </button>
         <button
           onClick={() => onAdjustTime(1)}
           disabled={!enabled}
-          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-7 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded md:rounded-lg bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+          className="flex-1 h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
         >
           +1s
         </button>
