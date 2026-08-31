@@ -1,15 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Team, 
-  GameSettings, 
-  GameEvent 
-} from './types';
-import { 
-  playStadiumHorn, 
-  playShotClockBuzzer, 
-  playWhistle, 
-  playScoreBeep 
-} from './utils/audio';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GameSettings, Team, GameEvent } from './types';
 import { ScoreboardHeader } from './components/ScoreboardHeader';
 import { TeamCard } from './components/TeamCard';
 import { GameClock } from './components/GameClock';
@@ -20,54 +10,57 @@ import { GameSettingsModal } from './components/GameSettingsModal';
 import { GameSummaryModal } from './components/GameSummaryModal';
 import { BasketballCourtBackground } from './components/BasketballCourtBackground';
 import { RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
+import { playStadiumHorn, playWhistle, playShotClockBuzzer, playScoreBeep } from './utils/audio';
 
 const INITIAL_SETTINGS: GameSettings = {
   periodMinutes: 10,
   overtimeMinutes: 5,
   totalRegularPeriods: 4,
+  useShotClock: true,
   shotClockSeconds: 24,
   shotClockOffensiveReboundSeconds: 14,
   foulsForBonus: 5,
   foulsForDoubleBonus: 7,
   maxTimeouts: 5,
   soundEnabled: true,
+  panelOpacity: 75,
 };
 
 const INITIAL_HOME_TEAM: Team = {
   id: 'home',
-  name: '湖人队 (LAL)',
-  shortName: 'LAL',
-  color: '#F59E0B',
-  accentColor: '#78350F',
+  name: '主队 (HOME)',
+  shortName: '主队',
+  color: '#EF4444',
+  accentColor: '#991B1B',
   score: 0,
   fouls: 0,
   timeoutsLeft: 5,
   quarterScores: [0, 0, 0, 0],
   players: [
-    { id: 'h1', number: 23, name: '勒布朗·詹姆斯', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h2', number: 3, name: '安东尼·戴维斯', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h3', number: 15, name: '奥斯汀·里夫斯', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h4', number: 1, name: '德安吉洛·拉塞尔', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h5', number: 28, name: '八村垒', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h1', number: 7, name: '1号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h2', number: 11, name: '2号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h3', number: 23, name: '3号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h4', number: 30, name: '4号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h5', number: 35, name: '5号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
   ],
 };
 
 const INITIAL_AWAY_TEAM: Team = {
   id: 'away',
-  name: '勇士队 (GSW)',
-  shortName: 'GSW',
-  color: '#06B6D4',
-  accentColor: '#164E63',
+  name: '客队 (AWAY)',
+  shortName: '客队',
+  color: '#3B82F6',
+  accentColor: '#1D4ED8',
   score: 0,
   fouls: 0,
   timeoutsLeft: 5,
   quarterScores: [0, 0, 0, 0],
   players: [
-    { id: 'a1', number: 30, name: '斯蒂芬·库里', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a2', number: 11, name: '克莱·汤普森', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a3', number: 23, name: '德雷蒙德·格林', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a4', number: 22, name: '安德鲁·维金斯', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a5', number: 0, name: '乔纳森·库明加', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a1', number: 1, name: '1号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a2', number: 3, name: '2号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a3', number: 8, name: '3号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a4', number: 13, name: '4号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a5', number: 24, name: '5号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
   ],
 };
 
@@ -94,6 +87,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
 
   // Format clock for history log
   const formatGameClockDisplay = (tenthsLeft: number) => {
@@ -187,8 +181,8 @@ export default function App() {
           return prevGame - 1;
         });
 
-        // Decrement Shot Clock if running
-        if (isShotClockRunning) {
+        // Decrement Shot Clock if running and enabled
+        if (settings.useShotClock && isShotClockRunning) {
           setShotClockTenths((prevShot) => {
             if (prevShot <= 1) {
               setIsShotClockRunning(false);
@@ -205,22 +199,28 @@ export default function App() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isGameClockRunning, isShotClockRunning, period, triggerHorn, triggerShotBuzzer, recordEvent]);
+  }, [isGameClockRunning, isShotClockRunning, period, settings.useShotClock, triggerHorn, triggerShotBuzzer, recordEvent]);
 
   // Handle Game Clock Play / Pause
   const handleToggleGameClock = () => {
     if (!isGameClockRunning && gameClockTenths === 0) {
       const minutes = period > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
       setGameClockTenths(minutes * 60 * 10);
-      setShotClockTenths(settings.shotClockSeconds * 10);
+      if (settings.useShotClock) {
+        setShotClockTenths(settings.shotClockSeconds * 10);
+      }
       setIsGameClockRunning(true);
-      setIsShotClockRunning(true);
+      setIsShotClockRunning(settings.useShotClock);
       return;
     }
 
     const nextState = !isGameClockRunning;
     setIsGameClockRunning(nextState);
-    setIsShotClockRunning(nextState);
+    if (settings.useShotClock) {
+      setIsShotClockRunning(nextState);
+    } else {
+      setIsShotClockRunning(false);
+    }
 
     if (nextState) {
       triggerWhistle();
@@ -242,7 +242,28 @@ export default function App() {
   };
 
   // Handle Shot Clock
+  const handleToggleShotClockEnabled = () => {
+    setSettings((prev) => {
+      const nextUseShotClock = !prev.useShotClock;
+      if (!nextUseShotClock) {
+        setIsShotClockRunning(false);
+      } else {
+        setShotClockTenths(prev.shotClockSeconds * 10);
+        if (isGameClockRunning) {
+          setIsShotClockRunning(true);
+        }
+      }
+      return {
+        ...prev,
+        useShotClock: nextUseShotClock,
+      };
+    });
+  };
+
   const handleResetShotClock24 = () => {
+    if (!settings.useShotClock) {
+      setSettings((prev) => ({ ...prev, useShotClock: true }));
+    }
     setShotClockTenths(settings.shotClockSeconds * 10);
     if (isGameClockRunning) {
       setIsShotClockRunning(true);
@@ -250,6 +271,9 @@ export default function App() {
   };
 
   const handleResetShotClock14 = () => {
+    if (!settings.useShotClock) {
+      setSettings((prev) => ({ ...prev, useShotClock: true }));
+    }
     setShotClockTenths(settings.shotClockOffensiveReboundSeconds * 10);
     if (isGameClockRunning) {
       setIsShotClockRunning(true);
@@ -257,99 +281,136 @@ export default function App() {
   };
 
   const handleToggleShotClock = () => {
+    if (!settings.useShotClock) return;
     setIsShotClockRunning((prev) => !prev);
   };
 
   const handleAdjustShotClock = (deltaSeconds: number) => {
+    if (!settings.useShotClock) return;
     setShotClockTenths((prev) => Math.max(0, prev + deltaSeconds * 10));
   };
 
-  // Scoring Logic
-  const handleScore = (teamId: 'home' | 'away', deltaPoints: number, playerId?: string) => {
-    const targetTeam = teamId === 'home' ? homeTeam : awayTeam;
-    const setTargetTeam = teamId === 'home' ? setHomeTeam : setAwayTeam;
+  // Period management
+  const handleSetPeriod = (newPeriod: number) => {
+    if (newPeriod === period) return;
+    setPeriod(newPeriod);
 
-    const currentScore = targetTeam.score;
-    const newScore = Math.max(0, currentScore + deltaPoints);
-
-    // Update Quarter Breakdown
-    const qIndex = period - 1;
-    const updatedQuarterScores = [...targetTeam.quarterScores];
-    while (updatedQuarterScores.length <= qIndex) {
-      updatedQuarterScores.push(0);
+    // Expand quarter scores array if needed
+    if (newPeriod > homeTeam.quarterScores.length) {
+      setHomeTeam((prev) => ({
+        ...prev,
+        quarterScores: [...prev.quarterScores, 0],
+      }));
+      setAwayTeam((prev) => ({
+        ...prev,
+        quarterScores: [...prev.quarterScores, 0],
+      }));
     }
-    updatedQuarterScores[qIndex] = Math.max(0, (updatedQuarterScores[qIndex] || 0) + deltaPoints);
 
-    let playerNameText = '';
-    let playerNumberText: number | undefined;
+    const minutes = newPeriod > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
+    setGameClockTenths(minutes * 60 * 10);
+    if (settings.useShotClock) {
+      setShotClockTenths(settings.shotClockSeconds * 10);
+    }
+    setIsGameClockRunning(false);
+    setIsShotClockRunning(false);
 
-    // Update Player stats if player selected
+    // Reset team fouls for new period
+    setHomeTeam((prev) => ({ ...prev, fouls: 0 }));
+    setAwayTeam((prev) => ({ ...prev, fouls: 0 }));
+
+    recordEvent('period_start', `进入第 ${newPeriod} 节比赛`);
+  };
+
+  const handleNextPeriod = () => {
+    handleSetPeriod(period + 1);
+  };
+
+  // Scoring Handler
+  const handleScore = (teamId: 'home' | 'away', points: number, playerId?: string) => {
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
+    const newScore = Math.max(0, targetTeam.score + points);
+
+    // Update quarter score breakdown
+    const qIndex = period - 1;
+    const currentQScore = targetTeam.quarterScores[qIndex] || 0;
+    const newQScore = Math.max(0, currentQScore + points);
+
+    const newQuarterScores = [...targetTeam.quarterScores];
+    while (newQuarterScores.length <= qIndex) {
+      newQuarterScores.push(0);
+    }
+    newQuarterScores[qIndex] = newQScore;
+
+    // Update Player stats if specified
     let updatedPlayers = [...targetTeam.players];
+    let scoredPlayerName: string | undefined = undefined;
+    let scoredPlayerNumber: number | undefined = undefined;
+
     if (playerId) {
-      updatedPlayers = targetTeam.players.map((p) => {
+      updatedPlayers = updatedPlayers.map((p) => {
         if (p.id === playerId) {
-          playerNameText = p.name;
-          playerNumberText = p.number;
-          const newPts = Math.max(0, p.points + deltaPoints);
-          let new2 = p.twoPointers;
-          let new3 = p.threePointers;
-          let newFt = p.freeThrows;
-
-          if (deltaPoints === 3) new3 += 1;
-          else if (deltaPoints === 2) new2 += 1;
-          else if (deltaPoints === 1) newFt += 1;
-          else if (deltaPoints === -1 && p.points > 0) {
-            if (newFt > 0) newFt -= 1;
-            else if (new2 > 0) new2 -= 1;
-          }
-
+          scoredPlayerName = p.name;
+          scoredPlayerNumber = p.number;
           return {
             ...p,
-            points: newPts,
-            twoPointers: Math.max(0, new2),
-            threePointers: Math.max(0, new3),
-            freeThrows: Math.max(0, newFt),
+            points: Math.max(0, p.points + points),
+            threePointers: points === 3 ? p.threePointers + 1 : p.threePointers,
+            twoPointers: points === 2 ? p.twoPointers + 1 : p.twoPointers,
+            freeThrows: points === 1 ? p.freeThrows + 1 : p.freeThrows,
           };
         }
         return p;
       });
     }
 
-    setTargetTeam({
-      ...targetTeam,
-      score: newScore,
-      quarterScores: updatedQuarterScores,
-      players: updatedPlayers,
-    });
-
-    if (deltaPoints > 0) {
-      triggerScoreBeep(deltaPoints);
-      handleResetShotClock24();
+    if (isHome) {
+      setHomeTeam((prev) => ({
+        ...prev,
+        score: newScore,
+        quarterScores: newQuarterScores,
+        players: updatedPlayers,
+      }));
+    } else {
+      setAwayTeam((prev) => ({
+        ...prev,
+        score: newScore,
+        quarterScores: newQuarterScores,
+        players: updatedPlayers,
+      }));
     }
 
-    const desc = playerNameText
-      ? `#${playerNumberText} ${playerNameText} ${deltaPoints > 0 ? `+${deltaPoints}分` : `${deltaPoints}分`}`
-      : `${deltaPoints > 0 ? `+${deltaPoints}分` : `${deltaPoints}分修正`}`;
+    if (points > 0) {
+      triggerScoreBeep(points);
+      // Auto reset 24s shot clock after score if enabled
+      if (settings.useShotClock) {
+        setShotClockTenths(settings.shotClockSeconds * 10);
+      }
+    }
 
-    recordEvent('score', desc, teamId, deltaPoints, playerNameText, playerNumberText);
+    const desc = playerId
+      ? `#${scoredPlayerNumber} ${scoredPlayerName} ${points > 0 ? `+${points}分` : `${points}分`} (${points === 3 ? '三分命中' : points === 2 ? '两分投进' : '罚球得分'})`
+      : `${points > 0 ? `+${points}分` : `${points}分`} 得分`;
+
+    recordEvent('score', desc, teamId, points, scoredPlayerName, scoredPlayerNumber);
   };
 
-  // Foul Logic
+  // Foul Handler
   const handleFoul = (teamId: 'home' | 'away', delta: number, playerId?: string) => {
-    const targetTeam = teamId === 'home' ? homeTeam : awayTeam;
-    const setTargetTeam = teamId === 'home' ? setHomeTeam : setAwayTeam;
-
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
     const newFouls = Math.max(0, targetTeam.fouls + delta);
 
-    let playerNameText = '';
-    let playerNumberText: number | undefined;
-
     let updatedPlayers = [...targetTeam.players];
+    let fouledPlayerName: string | undefined = undefined;
+    let fouledPlayerNumber: number | undefined = undefined;
+
     if (playerId) {
-      updatedPlayers = targetTeam.players.map((p) => {
+      updatedPlayers = updatedPlayers.map((p) => {
         if (p.id === playerId) {
-          playerNameText = p.name;
-          playerNumberText = p.number;
+          fouledPlayerName = p.name;
+          fouledPlayerNumber = p.number;
           return {
             ...p,
             fouls: Math.max(0, p.fouls + delta),
@@ -359,98 +420,95 @@ export default function App() {
       });
     }
 
-    setTargetTeam({
-      ...targetTeam,
-      fouls: newFouls,
-      players: updatedPlayers,
-    });
+    if (isHome) {
+      setHomeTeam((prev) => ({ ...prev, fouls: newFouls, players: updatedPlayers }));
+    } else {
+      setAwayTeam((prev) => ({ ...prev, fouls: newFouls, players: updatedPlayers }));
+    }
 
     if (delta > 0) {
       triggerWhistle();
     }
 
-    const desc = playerNameText
-      ? `#${playerNumberText} ${playerNameText} 个人犯规 (全队第 ${newFouls} 次)`
-      : `全队犯规 +1 (累计 ${newFouls} 次)`;
+    const desc = playerId
+      ? `#${fouledPlayerNumber} ${fouledPlayerName} 累计犯规 (${delta > 0 ? '+1' : '-1'})`
+      : `球队犯规 (${delta > 0 ? '+1' : '-1'})`;
 
-    recordEvent('foul', desc, teamId, undefined, playerNameText, playerNumberText);
+    recordEvent('foul', desc, teamId, undefined, fouledPlayerName, fouledPlayerNumber);
   };
 
-  // Timeout Logic
+  // Timeout Handlers
   const handleTimeout = (teamId: 'home' | 'away') => {
-    const targetTeam = teamId === 'home' ? homeTeam : awayTeam;
-    const setTargetTeam = teamId === 'home' ? setHomeTeam : setAwayTeam;
-
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
     if (targetTeam.timeoutsLeft <= 0) return;
 
-    setTargetTeam({
-      ...targetTeam,
-      timeoutsLeft: targetTeam.timeoutsLeft - 1,
-    });
+    const newTimeouts = targetTeam.timeoutsLeft - 1;
+    if (isHome) {
+      setHomeTeam((prev) => ({ ...prev, timeoutsLeft: newTimeouts }));
+    } else {
+      setAwayTeam((prev) => ({ ...prev, timeoutsLeft: newTimeouts }));
+    }
 
     setIsGameClockRunning(false);
     setIsShotClockRunning(false);
-    triggerWhistle();
+    triggerHorn();
 
-    recordEvent('timeout', `请求暂停 (剩余 ${targetTeam.timeoutsLeft - 1} 次)`, teamId);
+    recordEvent('timeout', `请求暂停 (剩余 ${newTimeouts} 次)`, teamId);
   };
 
   const handleAddTimeoutBack = (teamId: 'home' | 'away') => {
-    const targetTeam = teamId === 'home' ? homeTeam : awayTeam;
-    const setTargetTeam = teamId === 'home' ? setHomeTeam : setAwayTeam;
-
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
     if (targetTeam.timeoutsLeft >= settings.maxTimeouts) return;
 
-    setTargetTeam({
-      ...targetTeam,
-      timeoutsLeft: targetTeam.timeoutsLeft + 1,
-    });
+    const newTimeouts = targetTeam.timeoutsLeft + 1;
+    if (isHome) {
+      setHomeTeam((prev) => ({ ...prev, timeoutsLeft: newTimeouts }));
+    } else {
+      setAwayTeam((prev) => ({ ...prev, timeoutsLeft: newTimeouts }));
+    }
   };
 
-  // Period Navigation
-  const handleSetPeriod = (newPeriod: number) => {
-    setPeriod(newPeriod);
-    setHomeTeam((prev) => ({ ...prev, fouls: 0 }));
-    setAwayTeam((prev) => ({ ...prev, fouls: 0 }));
-    const minutes = newPeriod > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
-    setGameClockTenths(minutes * 60 * 10);
-    setShotClockTenths(settings.shotClockSeconds * 10);
-    setIsGameClockRunning(false);
-    setIsShotClockRunning(false);
-
-    recordEvent('period_start', `进入第 ${newPeriod} 节比赛`);
-  };
-
-  const handleNextPeriod = () => {
-    handleSetPeriod(period + 1);
-  };
-
-  // Undo Last Action
+  // Undo Handler
   const handleUndo = () => {
     if (events.length === 0) return;
     const [lastEvent, ...remainingEvents] = events;
+    if (lastEvent && lastEvent.undoState) {
+      const {
+        homeScore,
+        awayScore,
+        homeFouls,
+        awayFouls,
+        homeTimeouts,
+        awayTimeouts,
+        homeQuarterScores,
+        awayQuarterScores,
+        period: snapPeriod,
+        gameClockTenths: snapGameClock,
+        shotClockTenths: snapShotClock,
+      } = lastEvent.undoState;
 
-    if (lastEvent.undoState) {
-      const state = lastEvent.undoState;
       setHomeTeam((prev) => ({
         ...prev,
-        score: state.homeScore,
-        fouls: state.homeFouls,
-        timeoutsLeft: state.homeTimeouts,
-        quarterScores: state.homeQuarterScores,
+        score: homeScore,
+        fouls: homeFouls,
+        timeoutsLeft: homeTimeouts,
+        quarterScores: homeQuarterScores,
       }));
+
       setAwayTeam((prev) => ({
         ...prev,
-        score: state.awayScore,
-        fouls: state.awayFouls,
-        timeoutsLeft: state.awayTimeouts,
-        quarterScores: state.awayQuarterScores,
+        score: awayScore,
+        fouls: awayFouls,
+        timeoutsLeft: awayTimeouts,
+        quarterScores: awayQuarterScores,
       }));
-      setPeriod(state.period);
-      setGameClockTenths(state.gameClockTenths);
-      setShotClockTenths(state.shotClockTenths);
-    }
 
+      setPeriod(snapPeriod);
+      setGameClockTenths(snapGameClock);
+      setShotClockTenths(snapShotClock);
+    }
     setEvents(remainingEvents);
   };
 
@@ -458,7 +516,7 @@ export default function App() {
     setEvents([]);
   };
 
-  // Update Team Names
+  // Update Team Names and Colors
   const handleUpdateTeamName = (teamId: 'home' | 'away', name: string, shortName: string) => {
     if (teamId === 'home') {
       setHomeTeam((prev) => ({ ...prev, name, shortName }));
@@ -467,14 +525,48 @@ export default function App() {
     }
   };
 
+  const handleUpdateTeamColor = (teamId: 'home' | 'away', color: string, accentColor?: string) => {
+    if (teamId === 'home') {
+      setHomeTeam((prev) => ({
+        ...prev,
+        color,
+        accentColor: accentColor || color,
+      }));
+    } else {
+      setAwayTeam((prev) => ({
+        ...prev,
+        color,
+        accentColor: accentColor || color,
+      }));
+    }
+  };
+
   // Save Settings from Modal
-  const handleSaveSettings = (newSettings: GameSettings, newHomeName?: string, newAwayName?: string) => {
+  const handleSaveSettings = (
+    newSettings: GameSettings,
+    newHomeName: string,
+    newHomeShort: string,
+    newAwayName: string,
+    newAwayShort: string,
+    newHomeColor?: string,
+    newAwayColor?: string
+  ) => {
     setSettings(newSettings);
     if (newHomeName) {
-      setHomeTeam((prev) => ({ ...prev, name: newHomeName, shortName: newHomeName.slice(0, 4).toUpperCase() }));
+      setHomeTeam((prev) => ({
+        ...prev,
+        name: newHomeName,
+        shortName: newHomeShort || newHomeName.slice(0, 4).toUpperCase(),
+        color: newHomeColor || prev.color,
+      }));
     }
     if (newAwayName) {
-      setAwayTeam((prev) => ({ ...prev, name: newAwayName, shortName: newAwayName.slice(0, 4).toUpperCase() }));
+      setAwayTeam((prev) => ({
+        ...prev,
+        name: newAwayName,
+        shortName: newAwayShort || newAwayName.slice(0, 4).toUpperCase(),
+        color: newAwayColor || prev.color,
+      }));
     }
   };
 
@@ -524,12 +616,14 @@ export default function App() {
       ...INITIAL_HOME_TEAM,
       name: homeTeam.name,
       shortName: homeTeam.shortName,
+      color: homeTeam.color,
       players: homeTeam.players.map((p) => ({ ...p, points: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
     });
     setAwayTeam({
       ...INITIAL_AWAY_TEAM,
       name: awayTeam.name,
       shortName: awayTeam.shortName,
+      color: awayTeam.color,
       players: awayTeam.players.map((p) => ({ ...p, points: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
     });
     setGameClockTenths(settings.periodMinutes * 60 * 10);
@@ -570,11 +664,12 @@ export default function App() {
   const isHomeLeading = homeTeam.score > awayTeam.score;
   const isAwayLeading = awayTeam.score > homeTeam.score;
   const leadMargin = Math.abs(homeTeam.score - awayTeam.score);
+  const currentOpacity = settings.panelOpacity ?? 75;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 font-sans relative overflow-x-hidden">
+    <div className="min-h-screen landscape:h-screen landscape:max-h-screen landscape:overflow-hidden lg:h-screen lg:max-h-screen lg:overflow-hidden bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 font-sans relative overflow-x-hidden">
       {/* Authentic Basketball Court Floor & Markings Background */}
-      <BasketballCourtBackground />
+      <BasketballCourtBackground homeColor={homeTeam.color} awayColor={awayTeam.color} />
 
       {/* Top Fixed Scoreboard Bar */}
       <ScoreboardHeader
@@ -583,11 +678,17 @@ export default function App() {
         homeTeam={homeTeam}
         awayTeam={awayTeam}
         soundEnabled={settings.soundEnabled}
+        useShotClock={settings.useShotClock}
+        panelOpacity={currentOpacity}
+        onToggleShotClock={handleToggleShotClockEnabled}
+        onChangeOpacity={(newOpacity) => setSettings((prev) => ({ ...prev, panelOpacity: newOpacity }))}
         isStageMode={isStageMode}
         onToggleStageMode={() => setIsStageMode(!isStageMode)}
         onToggleSound={() => setSettings((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
         onPlayHorn={triggerHorn}
         onPlayWhistle={triggerWhistle}
+        onOpenEvents={() => setIsEventsOpen(true)}
+        eventsCount={events.length}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenSummary={() => setIsSummaryOpen(true)}
         onOpenRoster={() => setIsRosterOpen(true)}
@@ -596,12 +697,12 @@ export default function App() {
         onNextPeriod={handleNextPeriod}
       />
 
-      {/* Main Scoreboard Arena - Optimized for Mobile Landscape & Large Screen Viewing */}
-      <main className="relative z-10 flex-1 w-full max-w-[1600px] mx-auto p-2 sm:p-4 lg:p-6 landscape:p-1.5 landscape:sm:p-3 flex flex-col justify-between gap-2 sm:gap-4 landscape:gap-2">
-        {/* Top Arena Row: Home Team (Large) | Center Balanced Timers | Away Team (Large) */}
-        <div className="grid grid-cols-1 landscape:grid-cols-12 lg:grid-cols-12 gap-2 sm:gap-4 lg:gap-6 landscape:gap-1.5 landscape:sm:gap-2.5 items-stretch flex-1">
-          {/* Home Team Card (5 Cols in Landscape) */}
-          <div className="landscape:col-span-5 lg:col-span-5 flex flex-col h-full">
+      {/* Main Scoreboard Arena - Balanced responsive layout */}
+      <main className="relative z-10 flex-1 w-full max-w-[1700px] mx-auto px-2 sm:px-4 md:px-6 py-1.5 sm:py-3 landscape:py-1.5 flex flex-col justify-between gap-2 sm:gap-3 min-h-0">
+        {/* Top Arena Row: Home Team | Center Timers | Away Team */}
+        <div className="flex flex-col landscape:flex-row lg:flex-row gap-2 sm:gap-3 lg:gap-4 items-stretch flex-1 min-h-0 w-full">
+          {/* Home Team Card */}
+          <div className="flex-1 min-w-0 flex flex-col h-full">
             <TeamCard
               team={homeTeam}
               side="home"
@@ -610,19 +711,22 @@ export default function App() {
               foulsForBonus={settings.foulsForBonus}
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
+              panelOpacity={currentOpacity}
               onScore={handleScore}
               onFoul={handleFoul}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
               onUpdateTeamName={handleUpdateTeamName}
+              onUpdateTeamColor={handleUpdateTeamColor}
             />
           </div>
 
-          {/* Center Digital Timers Column (2 Cols in Landscape - Compact & Balanced) */}
-          <div className="landscape:col-span-2 lg:col-span-2 flex flex-col justify-between gap-2 sm:gap-4 landscape:gap-1.5 h-full">
+          {/* Center Digital Timers Column */}
+          <div className="w-full landscape:w-56 landscape:sm:w-64 landscape:lg:w-72 lg:w-80 shrink-0 flex flex-col justify-between gap-1.5 sm:gap-2 h-full min-h-0">
             <GameClock
               tenthsLeft={gameClockTenths}
               isRunning={isGameClockRunning}
+              panelOpacity={currentOpacity}
               onToggleRun={handleToggleGameClock}
               onResetClock={handleResetGameClock}
               onAdjustTime={handleAdjustGameClock}
@@ -632,6 +736,9 @@ export default function App() {
             <ShotClock
               tenthsLeft={shotClockTenths}
               isRunning={isShotClockRunning}
+              enabled={settings.useShotClock}
+              onToggleEnabled={handleToggleShotClockEnabled}
+              panelOpacity={currentOpacity}
               onToggleRun={handleToggleShotClock}
               onReset24={handleResetShotClock24}
               onReset14={handleResetShotClock14}
@@ -641,8 +748,8 @@ export default function App() {
             />
           </div>
 
-          {/* Away Team Card (5 Cols in Landscape) */}
-          <div className="landscape:col-span-5 lg:col-span-5 flex flex-col h-full">
+          {/* Away Team Card */}
+          <div className="flex-1 min-w-0 flex flex-col h-full">
             <TeamCard
               team={awayTeam}
               side="away"
@@ -651,23 +758,26 @@ export default function App() {
               foulsForBonus={settings.foulsForBonus}
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
+              panelOpacity={currentOpacity}
               onScore={handleScore}
               onFoul={handleFoul}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
               onUpdateTeamName={handleUpdateTeamName}
+              onUpdateTeamColor={handleUpdateTeamColor}
             />
           </div>
         </div>
 
-        {/* Bottom Section: Play-by-Play Events & Quick Technical Table Tips (Hidden in Clean Stage Mode) */}
+        {/* Portrait Mode Bottom Section: Play-by-Play Events & Quick Technical Table Tips */}
         {!isStageMode && (
-          <div className="grid grid-cols-1 landscape:grid-cols-12 lg:grid-cols-12 gap-2 sm:gap-4">
-            <div className="landscape:col-span-8 lg:col-span-8">
+          <div className="portrait:grid grid-cols-1 landscape:hidden lg:hidden gap-3 sm:gap-4 mt-2">
+            <div>
               <EventLog
                 events={events}
                 homeTeam={homeTeam}
                 awayTeam={awayTeam}
+                panelOpacity={currentOpacity}
                 canUndo={events.length > 0}
                 onUndo={handleUndo}
                 onClearEvents={handleClearEvents}
@@ -675,40 +785,46 @@ export default function App() {
             </div>
 
             {/* Quick Scorekeeper Guide */}
-            <div className="landscape:col-span-4 lg:col-span-4 bg-slate-900/85 backdrop-blur-md rounded-2xl p-3 sm:p-4 lg:p-5 landscape:p-2.5 border border-white/10 flex flex-col justify-between shadow-2xl shadow-black/50">
+            <div
+              style={{
+                backgroundColor: `rgba(15, 23, 42, ${Math.max(0.15, currentOpacity / 100)})`,
+                backdropFilter: currentOpacity < 95 ? 'blur(8px)' : 'none',
+              }}
+              className="rounded-2xl p-3 sm:p-4 border border-white/10 flex flex-col justify-between shadow-2xl shadow-black/50 transition-colors duration-200"
+            >
               <div>
                 <div className="flex items-center gap-2 text-amber-400 mb-2 font-bold text-xs uppercase tracking-wider">
-                  <HelpCircle className="w-4 h-4" />
+                  <HelpCircle className="w-3.5 h-3.5" />
                   <span>技术台快捷操作指引</span>
                 </div>
-                <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
+                <ul className="text-[11px] sm:text-xs text-slate-300 space-y-1.5 leading-relaxed">
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>快捷记分：</strong>点击 +1 / +2 / +3 快速记分并自动重置 24 秒进攻时钟。</span>
+                    <span><strong>快捷记分：</strong>点击 +1 / +2 / +3 快速记分，并自动记录得分球员数据。</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">空格 Space</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">R</kbd> 键重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">E</kbd> 键重置 14s。</span>
+                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">空格</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">R</kbd> 重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">E</kbd> 重置 14s。</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>误操作撤销：</strong>随时点击流水栏“撤销”或按 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">Ctrl+Z</kbd> 秒级回退。</span>
+                    <span><strong>24s 进攻时钟：</strong>支持随时一键禁用/启用 24s 进攻时钟（符合 FIBA 规则，适合比赛终场最后进攻或特殊判例）。</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>大屏投屏：</strong>点击右上角“全屏”或“大屏模式”，比分将以超大高对比度数字完美呈现。</span>
+                    <span><strong>透明度与球衣：</strong>点击右上角眼睛图标滑动调节透明度，点击队名旁调色板更换球衣配色。</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-digital">
+              <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-digital">
                 <span>单节: {settings.periodMinutes}分钟</span>
                 <span>BONUS: {settings.foulsForBonus}犯</span>
                 <button
                   onClick={() => setIsSettingsOpen(true)}
-                  className="text-amber-400 hover:text-amber-300 underline font-sans text-xs"
+                  className="text-amber-400 hover:text-amber-300 font-bold transition-colors underline"
                 >
-                  规则设置 &gt;
+                  更多规则设置 &gt;
                 </button>
               </div>
             </div>
@@ -716,14 +832,40 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      {!isStageMode && (
-        <footer className="relative z-10 bg-slate-950/80 backdrop-blur border-t border-white/5 px-4 py-2 text-center text-xs text-slate-500">
-          <span>篮球比赛专业记分系统 • 横屏大屏优化版 • 快捷键 Space 启停 / R 24s / E 14s / Ctrl+Z 撤销</span>
-        </footer>
+      {/* Play-by-Play Event Log Modal / Drawer */}
+      {isEventsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-slate-950/50">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-sm sm:text-base">比赛实时流水记录</span>
+                <span className="text-xs bg-amber-500/20 text-amber-300 font-digital px-2 py-0.5 rounded-full border border-amber-500/30">
+                  {events.length}条记录
+                </span>
+              </div>
+              <button
+                onClick={() => setIsEventsOpen(false)}
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-sm font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-3 sm:p-4 overflow-y-auto flex-1">
+              <EventLog
+                events={events}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                panelOpacity={100}
+                canUndo={events.length > 0}
+                onUndo={handleUndo}
+                onClearEvents={handleClearEvents}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Modals */}
+      {/* Roster & Player Stats Modal */}
       <RosterStatsModal
         isOpen={isRosterOpen}
         onClose={() => setIsRosterOpen(false)}
@@ -731,11 +873,12 @@ export default function App() {
         awayTeam={awayTeam}
         onAddPlayer={handleAddPlayer}
         onRemovePlayer={handleRemovePlayer}
-        onTogglePlayerCourt={handleTogglePlayerCourt}
-        onScorePlayer={handleScore}
-        onFoulPlayer={(teamId, playerId) => handleFoul(teamId, 1, playerId)}
+        onToggleOnCourt={handleTogglePlayerCourt}
+        onQuickScore={handleScore}
+        onQuickFoul={handleFoul}
       />
 
+      {/* Settings Modal */}
       <GameSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -745,43 +888,43 @@ export default function App() {
         onSaveSettings={handleSaveSettings}
       />
 
+      {/* Game Summary Report Modal */}
       <GameSummaryModal
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
         homeTeam={homeTeam}
         awayTeam={awayTeam}
         period={period}
-        totalRegularPeriods={settings.totalRegularPeriods}
-        settings={settings}
         events={events}
+        gameSettings={settings}
       />
 
       {/* Reset Confirmation Dialog */}
       {isResetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-bold text-white">重置比赛确认</h3>
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/30">
+              <AlertCircle className="w-6 h-6" />
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              确定要清空当前比赛比分、倒计时与流水记录并重新开始新的一场比赛吗？
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-white">确定重新开局？</h3>
+              <p className="text-xs text-slate-400">
+                此操作将重置比赛比分、犯规数、暂停数、节次与全部比赛流水，但将保留球队名称与球员名单。
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors"
+                className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleConfirmResetGame}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1 shadow-md shadow-rose-600/20"
+                className="py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-lg shadow-rose-600/30"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                确认重置
+                <span>确认重置</span>
               </button>
             </div>
           </div>

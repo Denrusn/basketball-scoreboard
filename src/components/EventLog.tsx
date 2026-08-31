@@ -20,6 +20,7 @@ interface EventLogProps {
   canUndo: boolean;
   onUndo: () => void;
   onClearEvents: () => void;
+  panelOpacity?: number;
 }
 
 export const EventLog: React.FC<EventLogProps> = ({
@@ -29,6 +30,7 @@ export const EventLog: React.FC<EventLogProps> = ({
   canUndo,
   onUndo,
   onClearEvents,
+  panelOpacity = 80,
 }) => {
   const [filter, setFilter] = useState<'all' | 'home' | 'away' | 'score'>('all');
   const [copied, setCopied] = useState(false);
@@ -67,8 +69,16 @@ export const EventLog: React.FC<EventLogProps> = ({
     return <History className="w-3.5 h-3.5 text-slate-400" />;
   };
 
+  const opacityRatio = Math.max(0.15, Math.min(1, (panelOpacity ?? 75) / 100));
+
   return (
-    <div className="bg-slate-900/85 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col h-[320px] shadow-2xl shadow-black/50">
+    <div
+      style={{
+        backgroundColor: `rgba(15, 23, 42, ${opacityRatio})`,
+        backdropFilter: opacityRatio < 0.95 ? 'blur(8px)' : 'none',
+      }}
+      className="rounded-2xl p-4 sm:p-5 border border-white/10 flex flex-col h-[320px] shadow-2xl shadow-black/50 transition-colors duration-200"
+    >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/5">
         <div className="flex items-center gap-2">

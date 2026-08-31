@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Sliders, Keyboard, Check, Volume2 } from 'lucide-react';
+import { X, Sliders, Keyboard, Check, Volume2, Eye, Palette, Timer, TimerOff } from 'lucide-react';
 import { GameSettings, Team } from '../types';
+import { JERSEY_COLOR_PRESETS } from '../utils/teamColors';
+import { TeamColorPicker } from './TeamColorPicker';
 
 interface GameSettingsModalProps {
   isOpen: boolean;
@@ -8,7 +10,15 @@ interface GameSettingsModalProps {
   settings: GameSettings;
   homeTeam: Team;
   awayTeam: Team;
-  onSaveSettings: (newSettings: GameSettings, homeName: string, homeShort: string, awayName: string, awayShort: string) => void;
+  onSaveSettings: (
+    newSettings: GameSettings,
+    homeName: string,
+    homeShort: string,
+    awayName: string,
+    awayShort: string,
+    homeColor?: string,
+    awayColor?: string
+  ) => void;
 }
 
 export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
@@ -21,16 +31,21 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 }) => {
   const [periodMinutes, setPeriodMinutes] = useState(settings.periodMinutes);
   const [overtimeMinutes, setOvertimeMinutes] = useState(settings.overtimeMinutes);
+  const [useShotClock, setUseShotClock] = useState(settings.useShotClock ?? true);
   const [shotClockSeconds, setShotClockSeconds] = useState(settings.shotClockSeconds);
   const [shotClockOffensiveReboundSeconds, setShotClockOffensiveReboundSeconds] = useState(settings.shotClockOffensiveReboundSeconds);
   const [foulsForBonus, setFoulsForBonus] = useState(settings.foulsForBonus);
   const [maxTimeouts, setMaxTimeouts] = useState(settings.maxTimeouts);
   const [soundEnabled, setSoundEnabled] = useState(settings.soundEnabled);
+  const [panelOpacity, setPanelOpacity] = useState(settings.panelOpacity ?? 75);
 
   const [homeName, setHomeName] = useState(homeTeam.name);
   const [homeShort, setHomeShort] = useState(homeTeam.shortName || 'HOME');
+  const [homeColor, setHomeColor] = useState(homeTeam.color || '#ef4444');
+
   const [awayName, setAwayName] = useState(awayTeam.name);
   const [awayShort, setAwayShort] = useState(awayTeam.shortName || 'AWAY');
+  const [awayColor, setAwayColor] = useState(awayTeam.color || '#3b82f6');
 
   if (!isOpen) return null;
 
@@ -41,17 +56,21 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
         ...settings,
         periodMinutes,
         overtimeMinutes,
+        useShotClock,
         shotClockSeconds,
         shotClockOffensiveReboundSeconds,
         foulsForBonus,
         foulsForDoubleBonus: foulsForBonus + 2,
         maxTimeouts,
         soundEnabled,
+        panelOpacity,
       },
       homeName,
       homeShort,
       awayName,
-      awayShort
+      awayShort,
+      homeColor,
+      awayColor
     );
     onClose();
   };
@@ -59,6 +78,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const presetFiba = () => {
     setPeriodMinutes(10);
     setOvertimeMinutes(5);
+    setUseShotClock(true);
     setShotClockSeconds(24);
     setShotClockOffensiveReboundSeconds(14);
     setFoulsForBonus(5);
@@ -67,6 +87,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const presetNba = () => {
     setPeriodMinutes(12);
     setOvertimeMinutes(5);
+    setUseShotClock(true);
     setShotClockSeconds(24);
     setShotClockOffensiveReboundSeconds(14);
     setFoulsForBonus(5);
@@ -74,7 +95,8 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
   const presetYouth = () => {
     setPeriodMinutes(8);
-    setOvertimeMinutes(3);
+    setOvertimeMinutes(4);
+    setUseShotClock(true);
     setShotClockSeconds(24);
     setShotClockOffensiveReboundSeconds(14);
     setFoulsForBonus(5);
@@ -83,6 +105,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const preset3x3 = () => {
     setPeriodMinutes(10);
     setOvertimeMinutes(0);
+    setUseShotClock(true);
     setShotClockSeconds(12);
     setShotClockOffensiveReboundSeconds(12);
     setFoulsForBonus(7);
@@ -98,8 +121,8 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">比赛规则与参数设置</h2>
-              <p className="text-xs text-slate-400">自定义单节时长、24秒/14秒规则、犯规加罚线与队伍名称</p>
+              <h2 className="text-lg font-bold text-white">比赛规则与外观自定义</h2>
+              <p className="text-xs text-slate-400">默认 FIBA 国际标准规则，支持 24s 进攻时钟启用/禁用、节次时长、球衣配色、面板透明度</p>
             </div>
           </div>
           <button
@@ -111,53 +134,236 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
         </div>
 
         {/* Content Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 text-sm">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-sm">
+          {/* Visual Appearance Section: Opacity & Theme Colors */}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-amber-400" />
+                页面视觉与透明度 (透视球场底色)
+              </h3>
+              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">
+                当前: {panelOpacity}%
+              </span>
+            </div>
+            
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>高透 (清晰透出木地板/球场地线)</span>
+                <span>标准 75%</span>
+                <span>实色 100%</span>
+              </div>
+              <input
+                type="range"
+                min="20"
+                max="100"
+                step="5"
+                value={panelOpacity}
+                onChange={(e) => setPanelOpacity(parseInt(e.target.value, 10))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              />
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPanelOpacity(40)}
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  超透视 40%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpacity(75)}
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  推荐 75%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpacity(95)}
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                >
+                  实色 95%
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Presets */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-2">
-              快速赛事预设:
+              快速赛事规则预设:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={presetFiba}
-                className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
+                className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 hover:border-amber-400 hover:bg-slate-800/80 text-xs font-bold text-amber-300 transition-all text-center"
               >
-                FIBA 国际篮联 (10分钟)
+                ★ FIBA 国际标准 (10分+24s)
               </button>
               <button
                 type="button"
                 onClick={presetNba}
-                className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
+                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
               >
-                NBA / CBA (12分钟)
+                NBA / 职业联赛 (12分+24s)
               </button>
               <button
                 type="button"
                 onClick={presetYouth}
-                className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
+                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
               >
-                青少年 / 校园赛 (8分钟)
+                校园 / 青年联赛 (8分+24s)
               </button>
               <button
                 type="button"
                 onClick={preset3x3}
-                className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
+                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
               >
-                三人篮球 3x3 (12秒进攻)
+                三人篮球 3x3 (10分+12s)
               </button>
+            </div>
+          </div>
+
+          {/* Shot Clock Master Toggle */}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  {useShotClock ? <Timer className="w-4 h-4 text-emerald-400" /> : <TimerOff className="w-4 h-4 text-slate-400" />}
+                  24秒 / 14秒 进攻时钟 (FIBA 标准)
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  符合 FIBA 国际标准 24 秒与前场篮板 14 秒规则。可在比赛中通过记分牌或顶部按钮随时禁用/启用。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUseShotClock(!useShotClock)}
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                  useShotClock ? 'bg-amber-500' : 'bg-slate-700'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                    useShotClock ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {useShotClock && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-white/5 animate-in fade-in">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    常规进攻时限 (秒)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="60"
+                    value={shotClockSeconds}
+                    onChange={(e) => setShotClockSeconds(parseInt(e.target.value, 10) || 24)}
+                    className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    前场篮板重置时限 (秒)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="30"
+                    value={shotClockOffensiveReboundSeconds}
+                    onChange={(e) => setShotClockOffensiveReboundSeconds(parseInt(e.target.value, 10) || 14)}
+                    className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Team Info & Jersey Colors */}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Palette className="w-4 h-4 text-amber-400" />
+              球队信息与球衣配色
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Home */}
+              <div className="space-y-2 p-3 rounded-lg bg-slate-900/60 border border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold" style={{ color: homeColor }}>
+                    主队 (HOME)
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-400">球衣色:</span>
+                    <TeamColorPicker
+                      currentColor={homeColor}
+                      onSelectColor={(hex) => setHomeColor(hex)}
+                      teamLabel="主队"
+                    />
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="主队全称"
+                  value={homeName}
+                  onChange={(e) => setHomeName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-white text-sm focus:border-amber-400 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="主队简称 (如 主队 / RED)"
+                  value={homeShort}
+                  onChange={(e) => setHomeShort(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Away */}
+              <div className="space-y-2 p-3 rounded-lg bg-slate-900/60 border border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold" style={{ color: awayColor }}>
+                    客队 (AWAY)
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-400">球衣色:</span>
+                    <TeamColorPicker
+                      currentColor={awayColor}
+                      onSelectColor={(hex) => setAwayColor(hex)}
+                      teamLabel="客队"
+                    />
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="客队全称"
+                  value={awayName}
+                  onChange={(e) => setAwayName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-white text-sm focus:border-cyan-400 focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="客队简称 (如 客队 / BLUE)"
+                  value={awayShort}
+                  onChange={(e) => setAwayShort(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
           {/* Time Rules */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
             <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              计时器规则
+              比赛节次时长
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  单节比赛时长 (分钟)
+                  常规单节比赛时长 (分钟)
                 </label>
                 <input
                   type="number"
@@ -170,7 +376,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  加时赛时长 (分钟)
+                  加时赛单节时长 (分钟)
                 </label>
                 <input
                   type="number"
@@ -178,32 +384,6 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   max="30"
                   value={overtimeMinutes}
                   onChange={(e) => setOvertimeMinutes(parseInt(e.target.value, 10) || 5)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  常规进攻时限 (秒)
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="60"
-                  value={shotClockSeconds}
-                  onChange={(e) => setShotClockSeconds(parseInt(e.target.value, 10) || 24)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  前场篮板重置时限 (秒)
-                </label>
-                <input
-                  type="number"
-                  min="5"
-                  max="30"
-                  value={shotClockOffensiveReboundSeconds}
-                  onChange={(e) => setShotClockOffensiveReboundSeconds(parseInt(e.target.value, 10) || 14)}
                   className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
                 />
               </div>
@@ -218,7 +398,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  单节犯规加罚线 (BONUS 犯规数)
+                  单节全队犯规加罚线 (BONUS 犯规数)
                 </label>
                 <input
                   type="number"
@@ -245,61 +425,16 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Team Names */}
-          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              球队信息
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-amber-400 mb-1 font-semibold">
-                  主队名称 (HOME)
-                </label>
-                <input
-                  type="text"
-                  value={homeName}
-                  onChange={(e) => setHomeName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white focus:border-amber-400 focus:outline-none mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="主队简称 (如 湖人 / LAL)"
-                  value={homeShort}
-                  onChange={(e) => setHomeShort(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-cyan-400 mb-1 font-semibold">
-                  客队名称 (AWAY)
-                </label>
-                <input
-                  type="text"
-                  value={awayName}
-                  onChange={(e) => setAwayName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white focus:border-cyan-400 focus:outline-none mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="客队简称 (如 勇士 / GSW)"
-                  value={awayShort}
-                  onChange={(e) => setAwayShort(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:border-cyan-400 focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Keyboard Shortcuts Cheat Sheet */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-2">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <Keyboard className="w-4 h-4 text-amber-400" />
-              常用记分员键盘快捷键
+              记分台常用快捷键
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
                 <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-400 font-bold mr-1">
-                  [空格 Space]
+                  [空格]
                 </span>
                 <span className="text-slate-300">比赛计时 启/停</span>
               </div>
@@ -307,13 +442,13 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-400 font-bold mr-1">
                   [R]
                 </span>
-                <span className="text-slate-300">重置 24秒</span>
+                <span className="text-slate-300">重置 24s</span>
               </div>
               <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
                 <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-400 font-bold mr-1">
                   [E]
                 </span>
-                <span className="text-slate-300">重置 14秒</span>
+                <span className="text-slate-300">重置 14s</span>
               </div>
               <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
                 <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-amber-400 font-bold mr-1">

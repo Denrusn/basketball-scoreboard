@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { 
-  Plus, 
-  Minus, 
   Flame, 
-  User,
-  Shield,
-  Clock
+  User, 
+  Shield, 
+  Clock, 
+  Plus, 
+  Minus 
 } from 'lucide-react';
 import { Team } from '../types';
+import { TeamColorPicker } from './TeamColorPicker';
+import { hexToRgba } from '../utils/teamColors';
 
 interface TeamCardProps {
   team: Team;
@@ -15,6 +17,7 @@ interface TeamCardProps {
   foulsForBonus: number;
   foulsForDoubleBonus: number;
   maxTimeouts: number;
+  panelOpacity?: number;
   isLeading?: boolean;
   leadMargin?: number;
   onScore: (teamId: 'home' | 'away', points: number, playerId?: string) => void;
@@ -22,6 +25,7 @@ interface TeamCardProps {
   onTimeout: (teamId: 'home' | 'away') => void;
   onAddTimeoutBack: (teamId: 'home' | 'away') => void;
   onUpdateTeamName: (teamId: 'home' | 'away', name: string, shortName: string) => void;
+  onUpdateTeamColor?: (teamId: 'home' | 'away', color: string, accentColor?: string) => void;
 }
 
 export const TeamCard: React.FC<TeamCardProps> = ({
@@ -30,6 +34,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   foulsForBonus,
   foulsForDoubleBonus,
   maxTimeouts,
+  panelOpacity = 75,
   isLeading = false,
   leadMargin = 0,
   onScore,
@@ -37,6 +42,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   onTimeout,
   onAddTimeoutBack,
   onUpdateTeamName,
+  onUpdateTeamColor,
 }) => {
   const isHome = side === 'home';
   const isBonus = team.fouls >= foulsForBonus && team.fouls < foulsForDoubleBonus;
@@ -63,36 +69,42 @@ export const TeamCard: React.FC<TeamCardProps> = ({
     onFoul(side, delta, selectedPlayerId || undefined);
   };
 
+  const primaryColor = team.color || (isHome ? '#ef4444' : '#3b82f6');
+  const opacityRatio = Math.max(0.15, Math.min(1, (panelOpacity ?? 75) / 100));
+
   return (
     <div
-      className={`relative rounded-2xl p-2.5 sm:p-4 lg:p-6 landscape:p-2 landscape:sm:p-3.5 backdrop-blur-md border transition-all duration-300 flex flex-col justify-between h-full ${
-        isHome
-          ? 'bg-slate-900/85 border-amber-500/30 shadow-2xl shadow-black/50'
-          : 'bg-slate-900/85 border-cyan-500/30 shadow-2xl shadow-black/50'
-      }`}
+      style={{
+        backgroundColor: `rgba(15, 23, 42, ${opacityRatio})`,
+        borderColor: hexToRgba(primaryColor, 0.45),
+        boxShadow: `0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px ${hexToRgba(primaryColor, 0.2)}`,
+        backdropFilter: opacityRatio < 0.95 ? 'blur(8px)' : 'none',
+      }}
+      className="relative rounded-xl sm:rounded-2xl p-2 sm:p-3.5 lg:p-4 landscape:p-2 border transition-colors duration-200 flex flex-col justify-between h-full min-h-0"
     >
-      {/* Top Header: Team Name & Status */}
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 pb-1 sm:pb-2 border-b border-white/5">
-        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+      {/* Top Header: Fixed height to prevent layout shift */}
+      <div className="h-7 sm:h-9 landscape:h-6 flex items-center justify-between gap-1.5 sm:gap-2 pb-1 border-b border-white/5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
           <span
-            className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded ${
-              isHome 
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
-                : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-            }`}
+            style={{
+              backgroundColor: hexToRgba(primaryColor, 0.2),
+              color: primaryColor,
+              borderColor: hexToRgba(primaryColor, 0.4),
+            }}
+            className="px-1.5 py-0.5 text-[9px] sm:text-xs font-black uppercase tracking-wider rounded border shrink-0 whitespace-nowrap"
           >
             {isHome ? '主队 HOME' : '客队 AWAY'}
           </span>
 
           {isEditingName ? (
-            <form onSubmit={handleNameSubmit} className="flex items-center gap-1">
+            <form onSubmit={handleNameSubmit} className="flex items-center gap-1 flex-1 min-w-0">
               <input
                 type="text"
                 autoFocus
                 value={teamNameInput}
                 onChange={(e) => setTeamNameInput(e.target.value)}
                 onBlur={handleNameSubmit}
-                className="bg-slate-950/90 border border-amber-400 px-1.5 py-0.5 rounded text-sm sm:text-lg font-bold text-white focus:outline-none w-28 sm:w-48"
+                className="bg-slate-950 border border-amber-400 px-1.5 py-0.5 rounded text-xs sm:text-base font-bold text-white focus:outline-none w-24 sm:w-36"
               />
             </form>
           ) : (
@@ -102,92 +114,134 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                 setIsEditingName(true);
               }}
               title="点击修改队名"
-              className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black text-white truncate hover:text-amber-200 transition-colors text-left"
+              className="text-xs sm:text-base lg:text-lg font-black text-white truncate hover:opacity-80 transition-opacity text-left max-w-[110px] sm:max-w-[180px] whitespace-nowrap"
             >
               {team.name}
             </button>
           )}
+
+          {/* Quick Color Picker Trigger */}
+          {onUpdateTeamColor && (
+            <TeamColorPicker
+              currentColor={primaryColor}
+              onSelectColor={(hex, accentHex) => onUpdateTeamColor(side, hex, accentHex)}
+              teamLabel={isHome ? '主队' : '客队'}
+            />
+          )}
         </div>
 
-        {/* Lead status badge */}
-        {isLeading && leadMargin > 0 && (
-          <span className="px-1.5 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-            领先 +{leadMargin}
-          </span>
-        )}
+        {/* Lead status badge (Fixed slot width to avoid jumping) */}
+        <div className="w-14 sm:w-18 flex justify-end shrink-0">
+          {isLeading && leadMargin > 0 ? (
+            <span
+              style={{
+                backgroundColor: hexToRgba(primaryColor, 0.25),
+                color: primaryColor,
+                borderColor: hexToRgba(primaryColor, 0.6),
+              }}
+              className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-bold border truncate text-center tabular-nums shadow-sm whitespace-nowrap"
+            >
+              +{leadMargin}
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      {/* Main Ultra-Clean Gigantic Score Display - Smooth scaling in mobile landscape */}
-      <div className="flex flex-col items-center justify-center py-1 sm:py-3 lg:py-5 landscape:py-0.5 select-none my-auto">
-        <div
-          className={`font-digital font-black text-5xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[11.5rem] landscape:text-4xl landscape:sm:text-6xl landscape:md:text-7xl landscape:lg:text-9xl leading-none tracking-tight ${
-            isHome
-              ? 'text-amber-400 drop-shadow-[0_0_35px_rgba(245,158,11,0.4)]'
-              : 'text-cyan-400 drop-shadow-[0_0_35px_rgba(6,182,212,0.4)]'
-          }`}
+      {/* Main Score Display (Flex container height, tabular digits) */}
+      <div className="flex-1 min-h-0 flex items-center justify-center select-none my-auto py-1 sm:py-2 shrink-0">
+        <span
+          style={{
+            color: primaryColor,
+            textShadow: `0 0 35px ${hexToRgba(primaryColor, 0.45)}`,
+          }}
+          className="font-digital font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl landscape:text-4xl landscape:sm:text-5xl tabular-nums leading-none tracking-normal"
         >
           {String(team.score).padStart(2, '0')}
-        </div>
+        </span>
       </div>
 
-      {/* Scoring Action Buttons (+1, +2, +3, -1) - Clean & Unified Style */}
-      <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-1.5 sm:mb-3 landscape:gap-1 landscape:mb-1">
+      {/* Scoring Action Deck (+1, +2, +3, -1) */}
+      <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mb-1 sm:mb-1.5 landscape:gap-1 landscape:mb-1 shrink-0">
+        {/* +1 Free Throw */}
         <button
           onClick={() => handleQuickScore(1)}
-          className="py-1.5 sm:py-2.5 lg:py-3 px-1 rounded-lg sm:rounded-xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold border border-white/10 transition-all flex flex-col items-center justify-center landscape:py-1"
+          className="group relative h-8 sm:h-10 lg:h-11 landscape:h-7 landscape:sm:h-8 rounded-lg sm:rounded-xl bg-slate-900/90 hover:bg-slate-800/95 border border-white/10 hover:border-white/20 active:scale-95 transition-all flex flex-col items-center justify-center shadow-lg shadow-black/40 overflow-hidden"
         >
-          <span className="text-base sm:text-xl lg:text-2xl font-black leading-tight text-white">+1</span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">罚球</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm sm:text-base lg:text-lg landscape:text-xs font-black font-digital text-emerald-400 group-hover:text-emerald-300 tabular-nums leading-none">
+            +1
+          </span>
+          <span className="text-[8px] sm:text-[9px] landscape:text-[7px] font-bold text-slate-400 group-hover:text-slate-300 mt-0.5 whitespace-nowrap">
+            罚球
+          </span>
         </button>
 
+        {/* +2 Field Goal */}
         <button
           onClick={() => handleQuickScore(2)}
-          className={`py-1.5 sm:py-2.5 lg:py-3 px-1 rounded-lg sm:rounded-xl active:scale-95 text-slate-950 font-bold transition-all shadow-md flex flex-col items-center justify-center landscape:py-1 ${
-            isHome
-              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
-              : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20'
-          }`}
+          style={{
+            background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.95)}, ${hexToRgba(primaryColor, 0.75)})`,
+            boxShadow: `0 4px 14px ${hexToRgba(primaryColor, 0.35)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            borderColor: hexToRgba(primaryColor, 0.8),
+          }}
+          className="group relative h-8 sm:h-10 lg:h-11 landscape:h-7 landscape:sm:h-8 rounded-lg sm:rounded-xl border active:scale-95 hover:brightness-110 transition-all flex flex-col items-center justify-center overflow-hidden"
         >
-          <span className="text-lg sm:text-2xl lg:text-3xl font-black leading-tight">+2</span>
-          <span className="text-[9px] sm:text-[10px] font-bold opacity-90">进球</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm sm:text-lg lg:text-xl landscape:text-xs landscape:sm:text-sm font-black font-digital text-slate-950 tabular-nums leading-none">
+            +2
+          </span>
+          <span className="text-[8px] sm:text-[9px] landscape:text-[7px] font-black text-slate-950/90 mt-0.5 whitespace-nowrap">
+            2分进球
+          </span>
         </button>
 
+        {/* +3 Three Pointer */}
         <button
           onClick={() => handleQuickScore(3)}
-          className={`py-1.5 sm:py-2.5 lg:py-3 px-1 rounded-lg sm:rounded-xl active:scale-95 text-white font-bold transition-all shadow-md flex flex-col items-center justify-center landscape:py-1 ${
-            isHome
-              ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20'
-              : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/20'
-          }`}
+          style={{
+            background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.95)}, ${hexToRgba(primaryColor, 0.75)})`,
+            boxShadow: `0 4px 14px ${hexToRgba(primaryColor, 0.35)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            borderColor: hexToRgba(primaryColor, 0.8),
+          }}
+          className="group relative h-8 sm:h-10 lg:h-11 landscape:h-7 landscape:sm:h-8 rounded-lg sm:rounded-xl border active:scale-95 hover:brightness-110 transition-all flex flex-col items-center justify-center overflow-hidden"
         >
-          <span className="text-lg sm:text-2xl lg:text-3xl font-black leading-tight flex items-center gap-0.5">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm sm:text-lg lg:text-xl landscape:text-xs landscape:sm:text-sm font-black font-digital text-slate-950 flex items-center gap-0.5 tabular-nums leading-none">
             +3
-            <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
+            <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3 landscape:w-2 landscape:h-2 fill-amber-400 text-amber-300 drop-shadow" />
           </span>
-          <span className="text-[9px] sm:text-[10px] font-bold opacity-90">三分球</span>
+          <span className="text-[8px] sm:text-[9px] landscape:text-[7px] font-black text-slate-950/90 mt-0.5 whitespace-nowrap">
+            三分远投
+          </span>
         </button>
 
+        {/* -1 Correction / Undo */}
         <button
           onClick={() => handleQuickScore(-1)}
           title="回退1分 (误操作修正)"
-          className="py-1.5 sm:py-2.5 lg:py-3 px-1 rounded-lg sm:rounded-xl bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 font-bold border border-white/5 transition-all flex flex-col items-center justify-center active:scale-95 landscape:py-1"
+          className="group relative h-8 sm:h-10 lg:h-11 landscape:h-7 landscape:sm:h-8 rounded-lg sm:rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-white/10 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 active:scale-95 transition-all flex flex-col items-center justify-center shadow-lg shadow-black/40 overflow-hidden"
         >
-          <span className="text-base sm:text-xl lg:text-2xl font-black leading-tight">-1</span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">修正</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="text-sm sm:text-base lg:text-lg landscape:text-xs font-black font-digital text-slate-400 group-hover:text-rose-400 tabular-nums leading-none">
+            -1
+          </span>
+          <span className="text-[8px] sm:text-[9px] landscape:text-[7px] font-bold text-slate-400 group-hover:text-rose-300/80 mt-0.5 whitespace-nowrap">
+            修正
+          </span>
         </button>
       </div>
 
       {/* Player Assignment (Optional / Compact) */}
       {team.players.length > 0 && (
-        <div className="mb-1.5 sm:mb-2.5 bg-slate-950/40 px-2 sm:px-3 py-1 rounded-lg border border-white/5 flex items-center justify-between gap-1.5 text-xs landscape:mb-1 landscape:py-0.5">
+        <div className="h-5 sm:h-6 mb-1 bg-slate-950/40 px-1.5 rounded-lg border border-white/5 flex items-center justify-between gap-1 text-xs landscape:mb-0.5 shrink-0">
           <div className="flex items-center gap-1 text-slate-400 shrink-0">
-            <User className="w-3 h-3 text-slate-400" />
-            <span className="text-[10px] sm:text-[11px]">球员:</span>
+            <User className="w-2.5 h-2.5 text-slate-400" />
+            <span className="text-[8px] sm:text-[9px] whitespace-nowrap">球员:</span>
           </div>
           <select
             value={selectedPlayerId}
             onChange={(e) => setSelectedPlayerId(e.target.value)}
-            className="bg-transparent border-0 text-slate-300 text-[10px] sm:text-xs rounded py-0.5 flex-1 focus:outline-none cursor-pointer truncate"
+            className="bg-transparent border-0 text-slate-300 text-[8px] sm:text-[10px] rounded py-0 flex-1 focus:outline-none cursor-pointer truncate"
           >
             <option value="" className="bg-slate-900 text-slate-200">全队通用</option>
             {team.players.map((player) => (
@@ -199,21 +253,30 @@ export const TeamCard: React.FC<TeamCardProps> = ({
         </div>
       )}
 
-      {/* Bottom Fouls & Timeouts - Clean Minimal Row */}
-      <div className="grid grid-cols-2 gap-1.5 sm:gap-3 pt-1.5 sm:pt-3 border-t border-white/10 landscape:gap-1.5 landscape:pt-1">
-        {/* Fouls */}
-        <div className="flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1 sm:py-2 border border-white/5">
-          <div className="min-w-0 pr-1">
-            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-slate-400 truncate">
-              <Shield className="w-3 h-3 text-amber-400/80 shrink-0" />
+      {/* Bottom Fouls & Timeouts Row */}
+      <div className="grid grid-cols-2 gap-1 sm:gap-2 pt-1 sm:pt-1.5 border-t border-white/10 shrink-0">
+        {/* Fouls Box */}
+        <div className="h-8 sm:h-10 landscape:h-7 flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 border border-white/5">
+          <div className="min-w-0 pr-1 flex-1">
+            <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-slate-400 truncate">
+              <Shield className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" style={{ color: primaryColor }} />
               <span className="truncate">犯规</span>
               {isDoubleBonus ? (
-                <span className="text-[8px] sm:text-[9px] font-bold px-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 shrink-0">加罚</span>
+                <span className="text-[7px] font-bold px-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 shrink-0">加罚</span>
               ) : isBonus ? (
-                <span className="text-[8px] sm:text-[9px] font-bold px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">BONUS</span>
+                <span
+                  style={{
+                    backgroundColor: hexToRgba(primaryColor, 0.2),
+                    color: primaryColor,
+                    borderColor: hexToRgba(primaryColor, 0.4),
+                  }}
+                  className="text-[7px] font-bold px-1 rounded border shrink-0"
+                >
+                  BONUS
+                </span>
               ) : null}
             </div>
-            <div className="font-digital text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight mt-0.5">
+            <div className="font-digital text-sm sm:text-lg landscape:text-xs font-black text-white leading-none mt-0.5 tabular-nums">
               {team.fouls}
             </div>
           </div>
@@ -221,44 +284,43 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <button
               onClick={() => handleQuickFoul(-1)}
               disabled={team.fouls <= 0}
-              className="w-6 h-6 sm:w-7 sm:h-7 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 transition-colors text-xs"
+              className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 transition-colors text-xs shrink-0"
               title="减少犯规"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
             </button>
             <button
               onClick={() => handleQuickFoul(1)}
-              className="px-1.5 sm:px-2.5 h-6 sm:h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] sm:text-xs font-bold transition-colors flex items-center gap-0.5"
+              className="px-1 h-4 sm:h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[8px] sm:text-[9px] font-bold transition-colors flex items-center gap-0.5 shrink-0 whitespace-nowrap"
               title="增加1次犯规"
             >
-              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span className="hidden xs:inline">犯规</span>
+              <Plus className="w-2 h-2" />
+              <span>+犯</span>
             </button>
           </div>
         </div>
 
-        {/* Timeouts */}
-        <div className="flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1 sm:py-2 border border-white/5">
-          <div className="flex-1 pr-1 sm:pr-2 min-w-0">
-            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-slate-400">
-              <span className="flex items-center gap-1 truncate">
-                <Clock className="w-3 h-3 text-cyan-400/80 shrink-0" />
+        {/* Timeouts Box */}
+        <div className="h-8 sm:h-10 landscape:h-7 flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl px-1.5 sm:px-2.5 border border-white/5">
+          <div className="flex-1 pr-1 min-w-0">
+            <div className="flex items-center justify-between text-[8px] sm:text-[9px] font-bold text-slate-400">
+              <span className="flex items-center gap-0.5 truncate">
+                <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0" style={{ color: primaryColor }} />
                 暂停
               </span>
-              <span className="font-digital text-[10px] sm:text-xs text-slate-300">
+              <span className="font-digital text-[8px] sm:text-[10px] text-slate-300 tabular-nums">
                 {team.timeoutsLeft}/{maxTimeouts}
               </span>
             </div>
             {/* Dots */}
-            <div className="flex items-center gap-0.5 sm:gap-1 mt-1 sm:mt-2">
+            <div className="flex items-center gap-0.5 mt-0.5">
               {Array.from({ length: maxTimeouts }).map((_, idx) => (
                 <span
                   key={idx}
-                  className={`h-1 sm:h-1.5 flex-1 rounded-full transition-colors ${
-                    idx < team.timeoutsLeft
-                      ? isHome ? 'bg-amber-400' : 'bg-cyan-400'
-                      : 'bg-slate-800'
-                  }`}
+                  style={{
+                    backgroundColor: idx < team.timeoutsLeft ? primaryColor : 'rgb(30, 41, 59)',
+                  }}
+                  className="h-0.5 sm:h-1 flex-1 rounded-full transition-colors"
                 />
               ))}
             </div>
@@ -267,7 +329,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <button
               onClick={() => onAddTimeoutBack(side)}
               disabled={team.timeoutsLeft >= maxTimeouts}
-              className="w-6 h-6 sm:w-7 sm:h-7 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 text-xs font-bold transition-colors"
+              className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 text-xs font-bold transition-colors shrink-0"
               title="补回暂停"
             >
               +
@@ -275,10 +337,10 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <button
               onClick={() => onTimeout(side)}
               disabled={team.timeoutsLeft <= 0}
-              className="px-1.5 sm:px-2.5 h-6 sm:h-7 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-200 text-[10px] sm:text-xs font-bold transition-colors"
+              className="px-1 h-4 sm:h-5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-200 text-[8px] sm:text-[9px] font-bold transition-colors shrink-0 whitespace-nowrap"
               title="叫暂停"
             >
-              暂停
+              叫停
             </button>
           </div>
         </div>

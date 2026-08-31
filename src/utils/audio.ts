@@ -94,42 +94,50 @@ export function playShotClockBuzzer(duration = 1.2) {
 }
 
 /**
- * Referee Whistle (Sharp trill pulse)
+ * Referee Whistle (Loud, sharp, piercing Fox 40 court blast)
  */
-export function playWhistle(duration = 0.6) {
+export function playWhistle(duration = 0.38) {
   const ctx = getAudioContext();
   if (!ctx) return;
 
   const now = ctx.currentTime;
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(0.2, now);
+  
+  // Instant sharp attack and loud court blast
+  masterGain.gain.setValueAtTime(0.001, now);
+  masterGain.gain.linearRampToValueAtTime(0.55, now + 0.005);
+  masterGain.gain.setValueAtTime(0.55, now + duration - 0.06);
   masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
   masterGain.connect(ctx.destination);
 
-  // Dual high-pitch oscillators modulated for whistle pea effect
-  const osc1 = ctx.createOscillator();
-  const osc2 = ctx.createOscillator();
-  osc1.type = 'sine';
-  osc2.type = 'sine';
-  osc1.frequency.setValueAtTime(2600, now);
-  osc2.frequency.setValueAtTime(2900, now);
+  // High resonant bandpass filter to simulate resonant whistle chamber
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(3050, now);
+  filter.Q.setValueAtTime(4.0, now);
+  filter.connect(masterGain);
 
-  const mod = ctx.createOscillator();
-  mod.frequency.setValueAtTime(30, now); // Trill speed
-  const modGain = ctx.createGain();
-  modGain.gain.setValueAtTime(150, now);
-  mod.connect(osc1.frequency);
-  mod.connect(osc2.frequency);
-  mod.start(now);
-  mod.stop(now + duration);
+  // Two primary high piercing whistle frequencies
+  const freqs = [2950, 3250];
 
-  osc1.connect(masterGain);
-  osc2.connect(masterGain);
+  freqs.forEach((freq) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    
+    // Very subtle micro-vibration for air turbulence
+    const vibrato = ctx.createOscillator();
+    vibrato.frequency.setValueAtTime(80, now);
+    const vibGain = ctx.createGain();
+    vibGain.gain.setValueAtTime(25, now);
+    vibrato.connect(osc.frequency);
+    vibrato.start(now);
+    vibrato.stop(now + duration);
 
-  osc1.start(now);
-  osc2.start(now);
-  osc1.stop(now + duration);
-  osc2.stop(now + duration);
+    osc.connect(filter);
+    osc.start(now);
+    osc.stop(now + duration);
+  });
 }
 
 /**

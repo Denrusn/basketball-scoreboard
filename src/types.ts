@@ -29,12 +29,14 @@ export interface GameSettings {
   periodMinutes: number;
   overtimeMinutes: number;
   totalRegularPeriods: number;
+  useShotClock: boolean; // Whether shot clock (24s/14s) is enabled (amateur friendly)
   shotClockSeconds: number;
   shotClockOffensiveReboundSeconds: number;
   foulsForBonus: number;
   foulsForDoubleBonus: number;
   maxTimeouts: number;
   soundEnabled: boolean;
+  panelOpacity: number; // 0 to 100 percentage
 }
 
 export interface GameEvent {
