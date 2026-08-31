@@ -18,7 +18,8 @@ import { EventLog } from './components/EventLog';
 import { RosterStatsModal } from './components/RosterStatsModal';
 import { GameSettingsModal } from './components/GameSettingsModal';
 import { GameSummaryModal } from './components/GameSummaryModal';
-import { RotateCcw, AlertCircle, HelpCircle, ArrowLeftRight } from 'lucide-react';
+import { BasketballCourtBackground } from './components/BasketballCourtBackground';
+import { RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
 
 const INITIAL_SETTINGS: GameSettings = {
   periodMinutes: 10,
@@ -571,7 +572,10 @@ export default function App() {
   const leadMargin = Math.abs(homeTeam.score - awayTeam.score);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 font-sans relative overflow-x-hidden">
+      {/* Authentic Basketball Court Floor & Markings Background */}
+      <BasketballCourtBackground />
+
       {/* Top Fixed Scoreboard Bar */}
       <ScoreboardHeader
         period={period}
@@ -592,12 +596,12 @@ export default function App() {
         onNextPeriod={handleNextPeriod}
       />
 
-      {/* Main Scoreboard Arena - Optimized for Landscape & Large Screen Viewing */}
-      <main className="flex-1 w-full max-w-[1600px] mx-auto p-3 sm:p-4 lg:p-6 flex flex-col justify-between gap-4">
+      {/* Main Scoreboard Arena - Optimized for Mobile Landscape & Large Screen Viewing */}
+      <main className="relative z-10 flex-1 w-full max-w-[1600px] mx-auto p-2 sm:p-4 lg:p-6 landscape:p-1.5 landscape:sm:p-3 flex flex-col justify-between gap-2 sm:gap-4 landscape:gap-2">
         {/* Top Arena Row: Home Team (Large) | Center Balanced Timers | Away Team (Large) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 items-stretch flex-1">
+        <div className="grid grid-cols-1 landscape:grid-cols-12 lg:grid-cols-12 gap-2 sm:gap-4 lg:gap-6 landscape:gap-1.5 landscape:sm:gap-2.5 items-stretch flex-1">
           {/* Home Team Card (5 Cols in Landscape) */}
-          <div className="lg:col-span-5 flex flex-col h-full">
+          <div className="landscape:col-span-5 lg:col-span-5 flex flex-col h-full">
             <TeamCard
               team={homeTeam}
               side="home"
@@ -615,7 +619,7 @@ export default function App() {
           </div>
 
           {/* Center Digital Timers Column (2 Cols in Landscape - Compact & Balanced) */}
-          <div className="lg:col-span-2 flex flex-col justify-between gap-3 sm:gap-4 h-full">
+          <div className="landscape:col-span-2 lg:col-span-2 flex flex-col justify-between gap-2 sm:gap-4 landscape:gap-1.5 h-full">
             <GameClock
               tenthsLeft={gameClockTenths}
               isRunning={isGameClockRunning}
@@ -638,7 +642,7 @@ export default function App() {
           </div>
 
           {/* Away Team Card (5 Cols in Landscape) */}
-          <div className="lg:col-span-5 flex flex-col h-full">
+          <div className="landscape:col-span-5 lg:col-span-5 flex flex-col h-full">
             <TeamCard
               team={awayTeam}
               side="away"
@@ -658,8 +662,8 @@ export default function App() {
 
         {/* Bottom Section: Play-by-Play Events & Quick Technical Table Tips (Hidden in Clean Stage Mode) */}
         {!isStageMode && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
-            <div className="lg:col-span-8">
+          <div className="grid grid-cols-1 landscape:grid-cols-12 lg:grid-cols-12 gap-2 sm:gap-4">
+            <div className="landscape:col-span-8 lg:col-span-8">
               <EventLog
                 events={events}
                 homeTeam={homeTeam}
@@ -671,7 +675,7 @@ export default function App() {
             </div>
 
             {/* Quick Scorekeeper Guide */}
-            <div className="lg:col-span-4 bg-slate-900/90 rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-col justify-between shadow-xl">
+            <div className="landscape:col-span-4 lg:col-span-4 bg-slate-900/85 backdrop-blur-md rounded-2xl p-3 sm:p-4 lg:p-5 landscape:p-2.5 border border-white/10 flex flex-col justify-between shadow-2xl shadow-black/50">
               <div>
                 <div className="flex items-center gap-2 text-amber-400 mb-2 font-bold text-xs uppercase tracking-wider">
                   <HelpCircle className="w-4 h-4" />
@@ -684,11 +688,11 @@ export default function App() {
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">空格 Space</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">R</kbd> 键重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">E</kbd> 键重置 14s。</span>
+                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">空格 Space</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">R</kbd> 键重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">E</kbd> 键重置 14s。</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>误操作撤销：</strong>随时点击流水栏“撤销”或按 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">Ctrl+Z</kbd> 秒级回退。</span>
+                    <span><strong>误操作撤销：</strong>随时点击流水栏“撤销”或按 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">Ctrl+Z</kbd> 秒级回退。</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-amber-400 font-bold">•</span>
@@ -697,7 +701,7 @@ export default function App() {
                 </ul>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-digital">
+              <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-digital">
                 <span>单节: {settings.periodMinutes}分钟</span>
                 <span>BONUS: {settings.foulsForBonus}犯</span>
                 <button
@@ -714,7 +718,7 @@ export default function App() {
 
       {/* Footer */}
       {!isStageMode && (
-        <footer className="bg-slate-900/60 border-t border-slate-800/80 px-4 py-2 text-center text-xs text-slate-500">
+        <footer className="relative z-10 bg-slate-950/80 backdrop-blur border-t border-white/5 px-4 py-2 text-center text-xs text-slate-500">
           <span>篮球比赛专业记分系统 • 横屏大屏优化版 • 快捷键 Space 启停 / R 24s / E 14s / Ctrl+Z 撤销</span>
         </footer>
       )}
