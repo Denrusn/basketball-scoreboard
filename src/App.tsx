@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Team, 
   GameSettings, 
-  GameEvent, 
-  Possession 
+  GameEvent 
 } from './types';
 import { 
   playStadiumHorn, 
@@ -19,7 +18,7 @@ import { EventLog } from './components/EventLog';
 import { RosterStatsModal } from './components/RosterStatsModal';
 import { GameSettingsModal } from './components/GameSettingsModal';
 import { GameSummaryModal } from './components/GameSummaryModal';
-import { RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
+import { RotateCcw, AlertCircle, HelpCircle, ArrowLeftRight } from 'lucide-react';
 
 const INITIAL_SETTINGS: GameSettings = {
   periodMinutes: 10,
@@ -74,7 +73,6 @@ const INITIAL_AWAY_TEAM: Team = {
 export default function App() {
   const [settings, setSettings] = useState<GameSettings>(INITIAL_SETTINGS);
   const [period, setPeriod] = useState<number>(1);
-  const [possession, setPossession] = useState<Possession>('none');
   const [homeTeam, setHomeTeam] = useState<Team>(INITIAL_HOME_TEAM);
   const [awayTeam, setAwayTeam] = useState<Team>(INITIAL_AWAY_TEAM);
 
@@ -83,6 +81,9 @@ export default function App() {
   const [shotClockTenths, setShotClockTenths] = useState<number>(settings.shotClockSeconds * 10);
   const [isGameClockRunning, setIsGameClockRunning] = useState<boolean>(false);
   const [isShotClockRunning, setIsShotClockRunning] = useState<boolean>(false);
+
+  // Big screen / Stage mode toggle
+  const [isStageMode, setIsStageMode] = useState<boolean>(false);
 
   // Events History & Undo Stack
   const [events, setEvents] = useState<GameEvent[]>([]);
@@ -131,7 +132,6 @@ export default function App() {
           awayTimeouts: awayTeam.timeoutsLeft,
           homeQuarterScores: [...homeTeam.quarterScores],
           awayQuarterScores: [...awayTeam.quarterScores],
-          possession,
           period,
           gameClockTenths,
           shotClockTenths,
@@ -140,10 +140,10 @@ export default function App() {
 
       setEvents((prev) => [newEvent, ...prev]);
     },
-    [period, gameClockTenths, homeTeam, awayTeam, possession, shotClockTenths]
+    [period, gameClockTenths, homeTeam, awayTeam, shotClockTenths]
   );
 
-  // Sound triggers wrapper
+  // Sound triggers
   const triggerHorn = useCallback(() => {
     if (settings.soundEnabled) {
       playStadiumHorn();
@@ -177,11 +177,10 @@ export default function App() {
         // Decrement Game Clock
         setGameClockTenths((prevGame) => {
           if (prevGame <= 1) {
-            // Period Expired!
             setIsGameClockRunning(false);
             setIsShotClockRunning(false);
             triggerHorn();
-            recordEvent('period_end', `第 ${period} 节时间到！`);
+            recordEvent('period_end', `第 ${period} 节比赛结束！`);
             return 0;
           }
           return prevGame - 1;
@@ -191,7 +190,6 @@ export default function App() {
         if (isShotClockRunning) {
           setShotClockTenths((prevShot) => {
             if (prevShot <= 1) {
-              // Shot Clock Expired!
               setIsShotClockRunning(false);
               triggerShotBuzzer();
               recordEvent('period_end', `24秒进攻时间到 (Shot Clock Violation)`);
@@ -211,7 +209,6 @@ export default function App() {
   // Handle Game Clock Play / Pause
   const handleToggleGameClock = () => {
     if (!isGameClockRunning && gameClockTenths === 0) {
-      // If time is 0, reset to period minutes first
       const minutes = period > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
       setGameClockTenths(minutes * 60 * 10);
       setShotClockTenths(settings.shotClockSeconds * 10);
@@ -222,7 +219,6 @@ export default function App() {
 
     const nextState = !isGameClockRunning;
     setIsGameClockRunning(nextState);
-    // Sync shot clock with game clock
     setIsShotClockRunning(nextState);
 
     if (nextState) {
@@ -275,7 +271,7 @@ export default function App() {
     const currentScore = targetTeam.score;
     const newScore = Math.max(0, currentScore + deltaPoints);
 
-    // Update Quarter Breakdown score
+    // Update Quarter Breakdown
     const qIndex = period - 1;
     const updatedQuarterScores = [...targetTeam.quarterScores];
     while (updatedQuarterScores.length <= qIndex) {
@@ -327,9 +323,6 @@ export default function App() {
 
     if (deltaPoints > 0) {
       triggerScoreBeep(deltaPoints);
-      // Auto switch possession to the other team on made basket
-      setPossession(teamId === 'home' ? 'away' : 'home');
-      // Reset shot clock to 24s
       handleResetShotClock24();
     }
 
@@ -394,7 +387,6 @@ export default function App() {
       timeoutsLeft: targetTeam.timeoutsLeft - 1,
     });
 
-    // Pause clocks on timeout
     setIsGameClockRunning(false);
     setIsShotClockRunning(false);
     triggerWhistle();
@@ -414,20 +406,11 @@ export default function App() {
     });
   };
 
-  // Toggle Possession
-  const handleTogglePossession = (teamId: 'home' | 'away') => {
-    const newPossession = possession === teamId ? 'none' : teamId;
-    setPossession(newPossession);
-    recordEvent('possession', newPossession === 'none' ? '球权释放/争球' : `获得球权`, teamId);
-  };
-
   // Period Navigation
   const handleSetPeriod = (newPeriod: number) => {
     setPeriod(newPeriod);
-    // Reset fouls per quarter in standard rules
     setHomeTeam((prev) => ({ ...prev, fouls: 0 }));
     setAwayTeam((prev) => ({ ...prev, fouls: 0 }));
-    // Reset clock for that period
     const minutes = newPeriod > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
     setGameClockTenths(minutes * 60 * 10);
     setShotClockTenths(settings.shotClockSeconds * 10);
@@ -462,7 +445,6 @@ export default function App() {
         timeoutsLeft: state.awayTimeouts,
         quarterScores: state.awayQuarterScores,
       }));
-      setPossession(state.possession);
       setPeriod(state.period);
       setGameClockTenths(state.gameClockTenths);
       setShotClockTenths(state.shotClockTenths);
@@ -471,7 +453,6 @@ export default function App() {
     setEvents(remainingEvents);
   };
 
-  // Clear Events
   const handleClearEvents = () => {
     setEvents([]);
   };
@@ -485,20 +466,18 @@ export default function App() {
     }
   };
 
-  // Save Settings Modal
-  const handleSaveSettings = (
-    newSettings: GameSettings,
-    homeName: string,
-    homeShort: string,
-    awayName: string,
-    awayShort: string
-  ) => {
+  // Save Settings from Modal
+  const handleSaveSettings = (newSettings: GameSettings, newHomeName?: string, newAwayName?: string) => {
     setSettings(newSettings);
-    setHomeTeam((prev) => ({ ...prev, name: homeName, shortName: homeShort, timeoutsLeft: newSettings.maxTimeouts }));
-    setAwayTeam((prev) => ({ ...prev, name: awayName, shortName: awayShort, timeoutsLeft: newSettings.maxTimeouts }));
+    if (newHomeName) {
+      setHomeTeam((prev) => ({ ...prev, name: newHomeName, shortName: newHomeName.slice(0, 4).toUpperCase() }));
+    }
+    if (newAwayName) {
+      setAwayTeam((prev) => ({ ...prev, name: newAwayName, shortName: newAwayName.slice(0, 4).toUpperCase() }));
+    }
   };
 
-  // Roster management handlers
+  // Roster handlers
   const handleAddPlayer = (
     teamId: 'home' | 'away',
     playerData: { number: number; name: string; isOnCourt: boolean }
@@ -537,10 +516,9 @@ export default function App() {
     else setAwayTeam(updater);
   };
 
-  // Reset Game Everything
+  // Reset Game
   const handleConfirmResetGame = () => {
     setPeriod(1);
-    setPossession('none');
     setHomeTeam({
       ...INITIAL_HOME_TEAM,
       name: homeTeam.name,
@@ -564,7 +542,6 @@ export default function App() {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Avoid triggering when typing inside input / textarea / select
       const activeTag = document.activeElement?.tagName.toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
         return;
@@ -589,8 +566,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
+  const isHomeLeading = homeTeam.score > awayTeam.score;
+  const isAwayLeading = awayTeam.score > homeTeam.score;
+  const leadMargin = Math.abs(homeTeam.score - awayTeam.score);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950 font-sans">
       {/* Top Fixed Scoreboard Bar */}
       <ScoreboardHeader
         period={period}
@@ -598,6 +579,8 @@ export default function App() {
         homeTeam={homeTeam}
         awayTeam={awayTeam}
         soundEnabled={settings.soundEnabled}
+        isStageMode={isStageMode}
+        onToggleStageMode={() => setIsStageMode(!isStageMode)}
         onToggleSound={() => setSettings((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
         onPlayHorn={triggerHorn}
         onPlayWhistle={triggerWhistle}
@@ -609,16 +592,17 @@ export default function App() {
         onNextPeriod={handleNextPeriod}
       />
 
-      {/* Main Scoreboard Arena */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-5">
-        {/* Main Row: Home Team Card | Center Clocks | Away Team Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          {/* Home Team (Cols 1-4) */}
-          <div className="lg:col-span-4 flex flex-col">
+      {/* Main Scoreboard Arena - Optimized for Landscape & Large Screen Viewing */}
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-3 sm:p-4 lg:p-6 flex flex-col justify-between gap-4">
+        {/* Top Arena Row: Home Team (Large) | Center Balanced Timers | Away Team (Large) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 items-stretch flex-1">
+          {/* Home Team Card (5 Cols in Landscape) */}
+          <div className="lg:col-span-5 flex flex-col h-full">
             <TeamCard
               team={homeTeam}
               side="home"
-              possession={possession}
+              isLeading={isHomeLeading}
+              leadMargin={leadMargin}
               foulsForBonus={settings.foulsForBonus}
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
@@ -626,13 +610,12 @@ export default function App() {
               onFoul={handleFoul}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
-              onTogglePossession={handleTogglePossession}
               onUpdateTeamName={handleUpdateTeamName}
             />
           </div>
 
-          {/* Center Digital Timers (Cols 5-8) */}
-          <div className="lg:col-span-4 flex flex-col gap-4">
+          {/* Center Digital Timers Column (2 Cols in Landscape - Compact & Balanced) */}
+          <div className="lg:col-span-2 flex flex-col justify-between gap-3 sm:gap-4 h-full">
             <GameClock
               tenthsLeft={gameClockTenths}
               isRunning={isGameClockRunning}
@@ -654,12 +637,13 @@ export default function App() {
             />
           </div>
 
-          {/* Away Team (Cols 9-12) */}
-          <div className="lg:col-span-4 flex flex-col">
+          {/* Away Team Card (5 Cols in Landscape) */}
+          <div className="lg:col-span-5 flex flex-col h-full">
             <TeamCard
               team={awayTeam}
               side="away"
-              possession={possession}
+              isLeading={isAwayLeading}
+              leadMargin={leadMargin}
               foulsForBonus={settings.foulsForBonus}
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
@@ -667,70 +651,73 @@ export default function App() {
               onFoul={handleFoul}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
-              onTogglePossession={handleTogglePossession}
               onUpdateTeamName={handleUpdateTeamName}
             />
           </div>
         </div>
 
-        {/* Bottom Section: Real-time Event Log & Quick Guide */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-8">
-            <EventLog
-              events={events}
-              homeTeam={homeTeam}
-              awayTeam={awayTeam}
-              canUndo={events.length > 0}
-              onUndo={handleUndo}
-              onClearEvents={handleClearEvents}
-            />
-          </div>
+        {/* Bottom Section: Play-by-Play Events & Quick Technical Table Tips (Hidden in Clean Stage Mode) */}
+        {!isStageMode && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+            <div className="lg:col-span-8">
+              <EventLog
+                events={events}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                canUndo={events.length > 0}
+                onUndo={handleUndo}
+                onClearEvents={handleClearEvents}
+              />
+            </div>
 
-          {/* Quick Scorekeeper Guide / Short status card */}
-          <div className="lg:col-span-4 bg-slate-900/90 rounded-2xl p-5 border border-slate-800 flex flex-col justify-between shadow-xl">
-            <div>
-              <div className="flex items-center gap-2 text-amber-400 mb-3 font-bold text-xs uppercase tracking-wider">
-                <HelpCircle className="w-4 h-4" />
-                <span>记分员操作提示</span>
+            {/* Quick Scorekeeper Guide */}
+            <div className="lg:col-span-4 bg-slate-900/90 rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-col justify-between shadow-xl">
+              <div>
+                <div className="flex items-center gap-2 text-amber-400 mb-2 font-bold text-xs uppercase tracking-wider">
+                  <HelpCircle className="w-4 h-4" />
+                  <span>技术台快捷操作指引</span>
+                </div>
+                <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span><strong>快捷记分：</strong>点击 +1 / +2 / +3 快速记分并自动重置 24 秒进攻时钟。</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">空格 Space</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">R</kbd> 键重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">E</kbd> 键重置 14s。</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span><strong>误操作撤销：</strong>随时点击流水栏“撤销”或按 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-slate-700">Ctrl+Z</kbd> 秒级回退。</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-amber-400 font-bold">•</span>
+                    <span><strong>大屏投屏：</strong>点击右上角“全屏”或“大屏模式”，比分将以超大高对比度数字完美呈现。</span>
+                  </li>
+                </ul>
               </div>
-              <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
-                <li className="flex items-start gap-1.5">
-                  <span className="text-amber-400 font-bold">•</span>
-                  <span><strong>进球快捷键：</strong>点击 +1/+2/+3 按钮自动增加比分并重置进攻24秒。</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="text-amber-400 font-bold">•</span>
-                  <span><strong>球权转换：</strong>点击“持球中/争球权”可在两队之间快速切换持球箭头。</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="text-amber-400 font-bold">•</span>
-                  <span><strong>球员个人数据：</strong>可选择记入特定球员，或在“球员统计”窗口批量记分与换人。</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="text-amber-400 font-bold">•</span>
-                  <span><strong>误操作恢复：</strong>随时点击流水栏的“撤销”按钮或按快捷键 <kbd className="px-1 bg-slate-800 rounded font-mono text-[10px] text-amber-300">Ctrl+Z</kbd> 回退。</span>
-                </li>
-              </ul>
-            </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-digital">
-              <span>单节时长: {settings.periodMinutes}分钟</span>
-              <span>BONUS线: {settings.foulsForBonus}犯</span>
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="text-amber-400 hover:text-amber-300 underline font-sans"
-              >
-                修改规则 &gt;
-              </button>
+              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-digital">
+                <span>单节: {settings.periodMinutes}分钟</span>
+                <span>BONUS: {settings.foulsForBonus}犯</span>
+                <button
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="text-amber-400 hover:text-amber-300 underline font-sans text-xs"
+                >
+                  规则设置 &gt;
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900/60 border-t border-slate-800/80 px-4 py-2 text-center text-xs text-slate-500">
-        <span>篮球比赛专业记分系统 • 支持快捷键 Space / R / E / Ctrl+Z • 大屏投屏即用</span>
-      </footer>
+      {!isStageMode && (
+        <footer className="bg-slate-900/60 border-t border-slate-800/80 px-4 py-2 text-center text-xs text-slate-500">
+          <span>篮球比赛专业记分系统 • 横屏大屏优化版 • 快捷键 Space 启停 / R 24s / E 14s / Ctrl+Z 撤销</span>
+        </footer>
+      )}
 
       {/* Modals */}
       <RosterStatsModal

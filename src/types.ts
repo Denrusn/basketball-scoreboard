@@ -14,16 +14,14 @@ export interface Team {
   id: 'home' | 'away';
   name: string;
   shortName: string;
-  color: string; // Hex or tailwind color class
+  color: string;
   accentColor: string;
   score: number;
   fouls: number;
   timeoutsLeft: number;
-  quarterScores: number[]; // Index 0: Q1, Index 1: Q2, ...
+  quarterScores: number[];
   players: Player[];
 }
-
-export type Possession = 'home' | 'away' | 'none';
 
 export type GameStatus = 'ready' | 'live' | 'paused' | 'period_break' | 'final';
 
@@ -45,12 +43,11 @@ export interface GameEvent {
   period: number;
   gameClockDisplay: string;
   teamId?: 'home' | 'away';
-  type: 'score' | 'foul' | 'timeout' | 'period_start' | 'period_end' | 'possession' | 'substitution' | 'edit';
+  type: 'score' | 'foul' | 'timeout' | 'period_start' | 'period_end' | 'substitution' | 'edit';
   points?: number;
   playerName?: string;
   playerNumber?: number;
   description: string;
-  // Snapshot for undo
   undoState?: {
     homeScore: number;
     awayScore: number;
@@ -60,7 +57,6 @@ export interface GameEvent {
     awayTimeouts: number;
     homeQuarterScores: number[];
     awayQuarterScores: number[];
-    possession: Possession;
     period: number;
     gameClockTenths: number;
     shotClockTenths: number;

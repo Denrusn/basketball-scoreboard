@@ -5,51 +5,46 @@ import {
   ShieldAlert, 
   Clock, 
   Flame, 
-  ChevronDown, 
-  UserCheck,
-  Disc
+  UserCheck
 } from 'lucide-react';
-import { Team, Player, Possession } from '../types';
+import { Team } from '../types';
 
 interface TeamCardProps {
   team: Team;
   side: 'home' | 'away';
-  possession: Possession;
   foulsForBonus: number;
   foulsForDoubleBonus: number;
   maxTimeouts: number;
+  isLeading?: boolean;
+  leadMargin?: number;
   onScore: (teamId: 'home' | 'away', points: number, playerId?: string) => void;
   onFoul: (teamId: 'home' | 'away', delta: number, playerId?: string) => void;
   onTimeout: (teamId: 'home' | 'away') => void;
   onAddTimeoutBack: (teamId: 'home' | 'away') => void;
-  onTogglePossession: (teamId: 'home' | 'away') => void;
   onUpdateTeamName: (teamId: 'home' | 'away', name: string, shortName: string) => void;
 }
 
 export const TeamCard: React.FC<TeamCardProps> = ({
   team,
   side,
-  possession,
   foulsForBonus,
   foulsForDoubleBonus,
   maxTimeouts,
+  isLeading = false,
+  leadMargin = 0,
   onScore,
   onFoul,
   onTimeout,
   onAddTimeoutBack,
-  onTogglePossession,
   onUpdateTeamName,
 }) => {
   const isHome = side === 'home';
-  const hasPossession = possession === side;
   const isBonus = team.fouls >= foulsForBonus && team.fouls < foulsForDoubleBonus;
   const isDoubleBonus = team.fouls >= foulsForDoubleBonus;
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [teamNameInput, setTeamNameInput] = useState(team.name);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
-
-  const activePlayers = team.players.filter((p) => p.isOnCourt);
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,19 +65,18 @@ export const TeamCard: React.FC<TeamCardProps> = ({
 
   return (
     <div
-      className={`relative rounded-2xl p-5 border transition-all duration-300 ${
+      className={`relative rounded-2xl p-4 sm:p-5 lg:p-6 border transition-all duration-300 flex flex-col justify-between h-full ${
         isHome
-          ? 'bg-slate-900/90 border-amber-500/30 shadow-xl shadow-amber-950/20'
-          : 'bg-slate-900/90 border-cyan-500/30 shadow-xl shadow-cyan-950/20'
-      } ${hasPossession ? 'ring-2 ' + (isHome ? 'ring-amber-400' : 'ring-cyan-400') : ''}`}
+          ? 'bg-slate-900/95 border-amber-500/40 shadow-2xl shadow-amber-950/30'
+          : 'bg-slate-900/95 border-cyan-500/40 shadow-2xl shadow-cyan-950/30'
+      }`}
     >
-      {/* Top Banner: Team Label, Edit Name & Possession Arrow */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        {/* Team Role & Name */}
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Top Banner: Role Badge, Team Name, and Lead Indicator */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           <span
-            className={`px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wider rounded ${
-              isHome ? 'bg-amber-500 text-slate-950' : 'bg-cyan-500 text-slate-950'
+            className={`px-2.5 py-1 text-xs font-black uppercase tracking-wider rounded-md shadow-sm ${
+              isHome ? 'bg-amber-500 text-slate-950 shadow-amber-500/30' : 'bg-cyan-500 text-slate-950 shadow-cyan-500/30'
             }`}
           >
             {isHome ? '主队 HOME' : '客队 AWAY'}
@@ -96,7 +90,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                 value={teamNameInput}
                 onChange={(e) => setTeamNameInput(e.target.value)}
                 onBlur={handleNameSubmit}
-                className="bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-sm text-white focus:outline-none focus:border-amber-400 w-32"
+                className="bg-slate-950 border border-amber-400/80 px-2.5 py-1 rounded-lg text-base font-bold text-white focus:outline-none w-44"
               />
             </form>
           ) : (
@@ -105,113 +99,112 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                 setTeamNameInput(team.name);
                 setIsEditingName(true);
               }}
-              title="点击修改队名"
-              className="text-lg sm:text-xl font-bold text-white truncate hover:underline hover:text-slate-200 transition-colors text-left"
+              title="点击修改队伍名称"
+              className="text-lg sm:text-xl md:text-2xl font-black text-white truncate hover:underline hover:text-amber-200 transition-colors text-left tracking-tight"
             >
               {team.name}
             </button>
           )}
         </div>
 
-        {/* Possession Arrow Button */}
-        <button
-          onClick={() => onTogglePossession(side)}
-          title={hasPossession ? '当前持球方 (点击切换)' : '设为持球方 (球权)'}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-            hasPossession
-              ? isHome
-                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/30 animate-pulse'
-                : 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-md shadow-cyan-400/30 animate-pulse'
-              : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-          }`}
-        >
-          <Disc className={`w-3.5 h-3.5 ${hasPossession ? 'fill-current' : ''}`} />
-          <span>{hasPossession ? '持球中' : '争球权'}</span>
-        </button>
+        {/* Lead status badge */}
+        {isLeading && leadMargin > 0 && (
+          <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse shrink-0">
+            领先 +{leadMargin}分
+          </span>
+        )}
       </div>
 
-      {/* Main Score Display */}
-      <div className="bg-slate-950/90 rounded-xl p-4 border border-slate-800/90 flex flex-col items-center justify-center my-3 relative overflow-hidden">
-        {/* Glow effect in background */}
-        <div
-          className={`absolute inset-0 opacity-10 pointer-events-none ${
-            isHome ? 'bg-amber-500' : 'bg-cyan-500'
-          }`}
-        />
-
-        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1">
-          得分 SCORE
+      {/* Main Massive Score Display */}
+      <div
+        className={`rounded-2xl p-4 sm:p-6 lg:p-7 border flex flex-col items-center justify-center my-2 sm:my-3 relative overflow-hidden transition-all ${
+          isHome
+            ? 'bg-gradient-to-b from-slate-950 via-slate-950 to-amber-950/20 border-amber-500/30'
+            : 'bg-gradient-to-b from-slate-950 via-slate-950 to-cyan-950/20 border-cyan-500/30'
+        }`}
+      >
+        {/* Score Header Label */}
+        <div className="flex items-center justify-between w-full text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">
+          <span className={isHome ? 'text-amber-400/80 font-mono' : 'text-cyan-400/80 font-mono'}>
+            TEAM SCORE
+          </span>
+          <span className="text-slate-400 font-medium">比分</span>
         </div>
 
-        <div
-          className={`font-digital text-7xl sm:text-8xl font-black tracking-tight leading-none ${
-            isHome ? 'text-amber-400' : 'text-cyan-400'
-          } drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]`}
-        >
-          {String(team.score).padStart(2, '0')}
+        {/* Gigantic Digits for Big Screen / Landscape Visibility */}
+        <div className="py-1 sm:py-2 select-none">
+          <div
+            className={`font-digital font-black text-8xl sm:text-9xl md:text-[8.5rem] lg:text-[9.5rem] xl:text-[11rem] leading-none tracking-tight ${
+              isHome
+                ? 'text-amber-400 drop-shadow-[0_0_40px_rgba(245,158,11,0.45)]'
+                : 'text-cyan-400 drop-shadow-[0_0_40px_rgba(6,182,212,0.45)]'
+            }`}
+          >
+            {String(team.score).padStart(2, '0')}
+          </div>
         </div>
       </div>
 
-      {/* Scoring Controls: +1, +2, +3, -1 */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      {/* Scoring Action Buttons (+1, +2, +3, -1) */}
+      <div className="grid grid-cols-4 gap-2 mb-3">
         <button
           onClick={() => handleQuickScore(1)}
-          className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold border border-slate-700/70 transition-all group"
+          className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold border border-slate-700/80 transition-all group shadow-md"
         >
-          <span className="text-lg font-black leading-tight text-white group-hover:text-amber-300">
+          <span className="text-xl sm:text-2xl font-black leading-tight text-white group-hover:text-amber-300">
             +1
           </span>
-          <span className="text-[10px] text-slate-400 font-normal">罚球</span>
+          <span className="text-[11px] text-slate-400 font-medium">罚球</span>
         </button>
 
         <button
           onClick={() => handleQuickScore(2)}
-          className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl active:scale-95 text-slate-950 font-bold border transition-all shadow-md group ${
+          className={`flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl active:scale-95 text-slate-950 font-bold border transition-all shadow-lg group ${
             isHome
-              ? 'bg-amber-500 hover:bg-amber-400 border-amber-400/80 shadow-amber-500/20'
-              : 'bg-cyan-500 hover:bg-cyan-400 border-cyan-400/80 shadow-cyan-500/20'
+              ? 'bg-amber-500 hover:bg-amber-400 border-amber-400/90 shadow-amber-500/25'
+              : 'bg-cyan-500 hover:bg-cyan-400 border-cyan-400/90 shadow-cyan-500/25'
           }`}
         >
-          <span className="text-xl font-black leading-tight">+2</span>
-          <span className="text-[10px] font-semibold opacity-90">进球</span>
+          <span className="text-2xl sm:text-3xl font-black leading-tight">+2</span>
+          <span className="text-[11px] font-bold opacity-90">进球</span>
         </button>
 
         <button
           onClick={() => handleQuickScore(3)}
-          className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl active:scale-95 font-bold border transition-all shadow-md group ${
+          className={`flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl active:scale-95 font-bold border transition-all shadow-lg group ${
             isHome
-              ? 'bg-orange-500 hover:bg-orange-400 text-slate-950 border-orange-400/80 shadow-orange-500/20'
-              : 'bg-blue-500 hover:bg-blue-400 text-white border-blue-400/80 shadow-blue-500/20'
+              ? 'bg-orange-500 hover:bg-orange-400 text-slate-950 border-orange-400/90 shadow-orange-500/25'
+              : 'bg-blue-500 hover:bg-blue-400 text-white border-blue-400/90 shadow-blue-500/25'
           }`}
         >
-          <span className="text-xl font-black leading-tight flex items-center gap-0.5">
+          <span className="text-2xl sm:text-3xl font-black leading-tight flex items-center gap-0.5">
             +3
-            <Flame className="w-3.5 h-3.5 fill-current" />
+            <Flame className="w-4 h-4 fill-current" />
           </span>
-          <span className="text-[10px] font-semibold opacity-90">三分球</span>
+          <span className="text-[11px] font-bold opacity-90">三分球</span>
         </button>
 
         <button
           onClick={() => handleQuickScore(-1)}
-          title="回退1分修正"
-          className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl bg-slate-950/80 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 font-bold border border-slate-800 hover:border-rose-900/60 transition-all active:scale-95"
+          title="回退1分 (误操作修正)"
+          className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl bg-slate-950/80 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 font-bold border border-slate-800 hover:border-rose-900/60 transition-all active:scale-95"
         >
-          <span className="text-lg font-black leading-tight">-1</span>
-          <span className="text-[10px] opacity-75 font-normal">修正</span>
+          <span className="text-xl sm:text-2xl font-black leading-tight">-1</span>
+          <span className="text-[11px] text-slate-400 font-medium">修正</span>
         </button>
       </div>
 
-      {/* Player Quick Attribution Selector */}
+      {/* Player Specific Quick Attribution */}
       {team.players.length > 0 && (
-        <div className="mb-4 bg-slate-950/70 p-2 rounded-lg border border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+        <div className="mb-3 bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 text-slate-400 shrink-0">
             <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[11px]">记到球员:</span>
+            <span className="text-[11px] font-medium">记分球员:</span>
           </div>
           <select
             value={selectedPlayerId}
             onChange={(e) => setSelectedPlayerId(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded px-2 py-1 flex-1 focus:outline-none focus:border-amber-400"
+            className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 flex-1 focus:outline-none focus:border-amber-400"
           >
             <option value="">全队通用 (不指定球员)</option>
             {team.players.map((player) => (
@@ -224,16 +217,15 @@ export const TeamCard: React.FC<TeamCardProps> = ({
         </div>
       )}
 
-      {/* Bottom Row: Fouls & Timeouts */}
-      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/70">
-        {/* Fouls Section */}
-        <div className="bg-slate-950/70 rounded-xl p-3 border border-slate-800 flex flex-col justify-between">
+      {/* Bottom Fouls & Timeouts Row */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-2.5 border-t border-slate-800/80">
+        {/* Team Fouls */}
+        <div className="bg-slate-950/80 rounded-xl p-3 border border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
               <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
               全队犯规
             </span>
-            {/* Bonus Indicator */}
             {isDoubleBonus ? (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-600 text-white animate-pulse">
                 2次罚球
@@ -246,21 +238,21 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="font-digital text-3xl font-black text-rose-400">
+            <div className="font-digital text-3xl sm:text-4xl font-black text-rose-400">
               {team.fouls}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onFoul(side, -1, selectedPlayerId || undefined)}
                 disabled={team.fouls <= 0}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 flex items-center justify-center text-slate-300 text-xs font-bold border border-slate-700 transition-colors"
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 flex items-center justify-center text-slate-300 text-xs font-bold border border-slate-700 transition-colors"
                 title="减少犯规"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleQuickFoul}
-                className="px-2.5 h-7 rounded-lg bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-800/80 flex items-center justify-center text-xs font-bold transition-colors"
+                className="px-2.5 h-7 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800 flex items-center justify-center text-xs font-bold transition-colors shadow-sm"
                 title="记录1次犯规"
               >
                 <Plus className="w-3.5 h-3.5 mr-0.5" />
@@ -270,19 +262,19 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           </div>
         </div>
 
-        {/* Timeouts Section */}
-        <div className="bg-slate-950/70 rounded-xl p-3 border border-slate-800 flex flex-col justify-between">
+        {/* Team Timeouts */}
+        <div className="bg-slate-950/80 rounded-xl p-3 border border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-sky-400" />
               剩余暂停
             </span>
-            <span className="text-[11px] font-digital font-bold text-sky-400">
+            <span className="text-xs font-digital font-bold text-sky-400">
               {team.timeoutsLeft} / {maxTimeouts}
             </span>
           </div>
 
-          {/* Timeouts Dot Indicators */}
+          {/* Dots Indicator */}
           <div className="flex items-center gap-1 my-1">
             {Array.from({ length: maxTimeouts }).map((_, idx) => {
               const isAvailable = idx < team.timeoutsLeft;
@@ -313,7 +305,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
             <button
               onClick={() => onTimeout(side)}
               disabled={team.timeoutsLeft <= 0}
-              className="px-2.5 h-7 rounded-lg bg-sky-950/70 hover:bg-sky-900 text-sky-200 border border-sky-800/80 disabled:opacity-40 disabled:hover:bg-sky-950 flex items-center justify-center text-xs font-bold transition-colors"
+              className="px-2.5 h-7 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-200 border border-sky-800 disabled:opacity-30 flex items-center justify-center text-xs font-bold transition-colors"
               title="叫暂停"
             >
               叫暂停
