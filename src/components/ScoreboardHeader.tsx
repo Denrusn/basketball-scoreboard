@@ -16,7 +16,8 @@ import {
   TimerOff,
   History,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  TrendingUp
 } from 'lucide-react';
 import { Team } from '../types';
 
@@ -165,19 +166,19 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   const scoreDiff = homeTeam.score - awayTeam.score;
 
   return (
-    <header ref={headerRef} className="bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-2 sm:px-4 lg:px-6 py-1.5 sticky top-0 z-40 shadow-md shrink-0 select-none w-full">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2">
+    <header ref={headerRef} className="bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-2 sm:px-4 md:px-6 lg:px-8 py-1.5 md:py-2.5 sticky top-0 z-40 shadow-md shrink-0 select-none w-full">
+      <div className="max-w-[1920px] mx-auto flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
         {/* Left: App Brand & Period Dropdown Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-500 flex items-center justify-center text-slate-950 font-black text-xs sm:text-sm shadow-md shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 min-w-0">
+          <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg md:rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black text-xs sm:text-sm md:text-base shadow-md shrink-0">
               🏀
             </div>
             <div className="hidden md:block min-w-0 shrink-0">
-              <h1 className="text-xs sm:text-sm font-black text-white tracking-wide leading-none whitespace-nowrap">
+              <h1 className="text-xs sm:text-sm md:text-base font-black text-white tracking-wide leading-none whitespace-nowrap">
                 篮球记分板
               </h1>
-              <div className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5 whitespace-nowrap">
+              <div className="text-[10px] sm:text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5 whitespace-nowrap">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                 <span className="tabular-nums">
                   {scoreDiff > 0
@@ -195,14 +196,14 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'period' ? null : 'period')}
               title="切换比赛节次与加时赛"
-              className={`h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg border text-[11px] sm:text-xs font-black flex items-center gap-1 transition-all shrink-0 ${
+              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-2 sm:px-2.5 md:px-3.5 rounded-lg md:rounded-xl border text-[11px] sm:text-xs md:text-sm font-black flex items-center gap-1 transition-all shrink-0 cursor-pointer ${
                 activeDropdown === 'period'
                   ? 'bg-amber-500 text-slate-950 border-amber-400'
                   : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/30'
               }`}
             >
               <span>{period <= totalRegularPeriods ? `第 ${period} 节` : `加时 OT${period - totalRegularPeriods}`}</span>
-              <ChevronDown className="w-3 h-3 opacity-80" />
+              <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-80" />
             </button>
 
             {activeDropdown === 'period' && (
@@ -287,14 +288,14 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
         </div>
 
         {/* Right: Aggregated Secondary Menus (No overflow, fully responsive) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
           {/* 1. Direct Quick Whistle */}
           <button
             onClick={onPlayWhistle}
             title="吹哨 (响亮裁判哨音)"
-            className="h-7 sm:h-8 px-1.5 sm:px-2.5 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition-all border border-amber-500/30 whitespace-nowrap shrink-0"
+            className="h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2.5 md:px-3 lg:px-3.5 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-all border border-amber-500/30 whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <Radio className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+            <Radio className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0 animate-pulse" />
             <span className="whitespace-nowrap">鸣哨</span>
           </button>
 
@@ -303,19 +304,19 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'sound' ? null : 'sound')}
               title="裁判音响与 24s 控制"
-              className={`h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition-colors border shrink-0 ${
+              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-3 lg:px-3.5 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer ${
                 activeDropdown === 'sound'
                   ? 'bg-amber-500 text-slate-950 border-amber-400'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10'
               }`}
             >
-              <Megaphone className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <Megaphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-rose-400 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap">裁判台</span>
-              <ChevronDown className="w-3 h-3 opacity-70" />
+              <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
             </button>
 
             {activeDropdown === 'sound' && (
-              <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+              <div className="absolute right-0 top-full mt-1.5 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl z-50 animate-in fade-in zoom-in-95">
                 <div className="text-[11px] font-bold text-slate-400 px-2 py-1 mb-1 border-b border-white/5 flex items-center justify-between">
                   <span>裁判台与音效控制</span>
                   <span className="text-[10px] text-amber-400">{soundEnabled ? '音效开启' : '已静音'}</span>
@@ -326,7 +327,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onPlayHorn();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Megaphone className="w-4 h-4 text-rose-400" />
@@ -340,7 +341,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onPlayWhistle();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Radio className="w-4 h-4 text-amber-400" />
@@ -354,7 +355,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onClick={() => {
                         onToggleShotClock();
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
                         {useShotClock ? <Timer className="w-4 h-4 text-amber-400" /> : <TimerOff className="w-4 h-4 text-slate-400" />}
@@ -368,7 +369,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
 
                   <button
                     onClick={onToggleSound}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors mt-0.5 border-t border-white/5 pt-2"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors mt-0.5 border-t border-white/5 pt-2 cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
@@ -386,24 +387,24 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'stats' ? null : 'stats')}
               title="比赛统计与记录"
-              className={`h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition-colors border shrink-0 ${
+              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-3 lg:px-3.5 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer ${
                 activeDropdown === 'stats'
                   ? 'bg-amber-500 text-slate-950 border-amber-400'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10'
               }`}
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap">数据</span>
               {eventsCount > 0 && (
-                <span className="bg-amber-400 text-slate-950 text-[9px] font-digital font-black px-1 rounded-full">
+                <span className="bg-amber-400 text-slate-950 text-[9px] md:text-[10px] font-digital font-black px-1 rounded-full">
                   {eventsCount}
                 </span>
               )}
-              <ChevronDown className="w-3 h-3 opacity-70" />
+              <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
             </button>
 
             {activeDropdown === 'stats' && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+              <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95">
                 <div className="text-[11px] font-bold text-slate-400 px-2 py-1 mb-1 border-b border-white/5">
                   比赛数据与报告
                 </div>
@@ -414,7 +415,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                         onOpenEvents();
                         setActiveDropdown(null);
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
                         <History className="w-4 h-4 text-amber-400" />
@@ -431,7 +432,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onOpenRoster();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-sky-400" />
@@ -445,13 +446,13 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onOpenSummary();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-amber-400" />
-                      <span>全场比赛战报</span>
+                      <TrendingUp className="w-4 h-4 text-amber-400" />
+                      <span>比分趋势图与战报</span>
                     </span>
-                    <span className="text-[10px] text-slate-400">导出/技术统计</span>
+                    <span className="text-[10px] text-amber-400/80 font-normal">走势/导出</span>
                   </button>
                 </div>
               </div>
@@ -463,19 +464,19 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'display' ? null : 'display')}
               title="设置与外观"
-              className={`h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition-colors border shrink-0 ${
+              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-3 lg:px-3.5 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer ${
                 activeDropdown === 'display'
                   ? 'bg-amber-500 text-slate-950 border-amber-400'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10'
               }`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+              <SlidersHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-300 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap">设置</span>
-              <ChevronDown className="w-3 h-3 opacity-70" />
+              <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
             </button>
 
             {activeDropdown === 'display' && (
-              <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+              <div className="absolute right-0 top-full mt-1.5 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl z-50 animate-in fade-in zoom-in-95">
                 <div className="text-[11px] font-bold text-slate-400 px-1 py-1 mb-1 border-b border-white/5 flex items-center justify-between">
                   <span>系统与外观设置</span>
                   <span className="text-[10px] text-amber-400 font-digital">{panelOpacity}%透明</span>
@@ -511,7 +512,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                         onToggleStageMode();
                         setActiveDropdown(null);
                       }}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
                         <Tv className="w-4 h-4 text-emerald-400" />
@@ -527,7 +528,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onOpenSettings();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <SlidersHorizontal className="w-4 h-4 text-amber-400" />
@@ -541,7 +542,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       onResetGame();
                       setActiveDropdown(null);
                     }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-rose-950 text-rose-300 text-xs font-bold flex items-center justify-between transition-colors border border-rose-500/20"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-rose-950 text-rose-300 text-xs font-bold flex items-center justify-between transition-colors border border-rose-500/20 cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <RotateCcw className="w-4 h-4 text-rose-400" />
@@ -559,13 +560,13 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             id="btn-toggle-fullscreen"
             onClick={toggleFullscreen}
             title={isFullscreen ? '退出全屏' : '全屏并锁定横屏'}
-            className={`h-7 sm:h-8 w-7 sm:w-8 p-0 rounded-lg border transition-all shrink-0 flex items-center justify-center cursor-pointer active:scale-95 shadow-sm ${
+            className={`h-7 sm:h-8 md:h-9 lg:h-10 w-7 sm:w-8 md:w-9 lg:w-10 p-0 rounded-lg md:rounded-xl border transition-all shrink-0 flex items-center justify-center cursor-pointer active:scale-95 shadow-sm ${
               isFullscreen
                 ? 'bg-amber-500 text-slate-950 border-amber-400'
                 : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-white/10'
             }`}
           >
-            {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
+            {isFullscreen ? <Minimize className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Maximize className="w-3.5 h-3.5 md:w-4 md:h-4" />}
           </button>
         </div>
       </div>

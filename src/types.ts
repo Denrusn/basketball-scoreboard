@@ -50,6 +50,8 @@ export interface GameEvent {
   playerName?: string;
   playerNumber?: number;
   description: string;
+  homeScore?: number;
+  awayScore?: number;
   undoState?: {
     homeScore: number;
     awayScore: number;

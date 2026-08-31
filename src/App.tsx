@@ -97,7 +97,7 @@ export default function App() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  // Helper to record an event with full snapshot for undo
+  // Helper to record an event with full snapshot for undo and score trend
   const recordEvent = useCallback(
     (
       type: GameEvent['type'],
@@ -105,8 +105,12 @@ export default function App() {
       teamId?: 'home' | 'away',
       points?: number,
       playerName?: string,
-      playerNumber?: number
+      playerNumber?: number,
+      exactScores?: { home: number; away: number }
     ) => {
+      const curHome = exactScores ? exactScores.home : homeTeam.score;
+      const curAway = exactScores ? exactScores.away : awayTeam.score;
+
       const newEvent: GameEvent = {
         id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         timestamp: Date.now(),
@@ -118,6 +122,8 @@ export default function App() {
         playerName,
         playerNumber,
         description,
+        homeScore: curHome,
+        awayScore: curAway,
         undoState: {
           homeScore: homeTeam.score,
           awayScore: awayTeam.score,
@@ -393,7 +399,13 @@ export default function App() {
       ? `#${scoredPlayerNumber} ${scoredPlayerName} ${points > 0 ? `+${points}分` : `${points}分`} (${points === 3 ? '三分命中' : points === 2 ? '两分投进' : '罚球得分'})`
       : `${points > 0 ? `+${points}分` : `${points}分`} 得分`;
 
-    recordEvent('score', desc, teamId, points, scoredPlayerName, scoredPlayerNumber);
+    const updatedHomeScore = isHome ? newScore : homeTeam.score;
+    const updatedAwayScore = !isHome ? newScore : awayTeam.score;
+
+    recordEvent('score', desc, teamId, points, scoredPlayerName, scoredPlayerNumber, {
+      home: updatedHomeScore,
+      away: updatedAwayScore,
+    });
   };
 
   // Foul Handler
@@ -698,9 +710,9 @@ export default function App() {
       />
 
       {/* Main Scoreboard Arena - Balanced responsive layout */}
-      <main className="relative z-10 flex-1 w-full max-w-[1700px] mx-auto px-2 sm:px-4 md:px-6 py-1.5 sm:py-3 landscape:py-1.5 flex flex-col justify-between gap-2 sm:gap-3 min-h-0">
+      <main className="relative z-10 flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-1.5 sm:py-3 landscape:py-1.5 flex flex-col justify-between gap-2 sm:gap-3 min-h-0">
         {/* Top Arena Row: Home Team | Center Timers | Away Team */}
-        <div className="flex flex-col landscape:flex-row lg:flex-row gap-2 sm:gap-3 lg:gap-4 items-stretch flex-1 min-h-0 w-full">
+        <div className="flex flex-col landscape:flex-row lg:flex-row gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 items-stretch flex-1 min-h-0 w-full">
           {/* Home Team Card */}
           <div className="flex-1 min-w-0 flex flex-col h-full">
             <TeamCard
@@ -722,7 +734,7 @@ export default function App() {
           </div>
 
           {/* Center Digital Timers Column */}
-          <div className="w-full landscape:w-56 landscape:sm:w-64 landscape:lg:w-72 lg:w-80 shrink-0 flex flex-col justify-between gap-1.5 sm:gap-2 h-full min-h-0">
+          <div className="w-full landscape:w-60 landscape:sm:w-72 landscape:md:w-80 landscape:lg:w-96 landscape:xl:w-[420px] landscape:2xl:w-[480px] lg:w-96 xl:w-[420px] 2xl:w-[480px] shrink-0 flex flex-col justify-between gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 h-full min-h-0">
             <GameClock
               tenthsLeft={gameClockTenths}
               isRunning={isGameClockRunning}
@@ -781,6 +793,8 @@ export default function App() {
                 canUndo={events.length > 0}
                 onUndo={handleUndo}
                 onClearEvents={handleClearEvents}
+                period={period}
+                totalRegularPeriods={settings.totalRegularPeriods}
               />
             </div>
 
@@ -859,6 +873,8 @@ export default function App() {
                 canUndo={events.length > 0}
                 onUndo={handleUndo}
                 onClearEvents={handleClearEvents}
+                period={period}
+                totalRegularPeriods={settings.totalRegularPeriods}
               />
             </div>
           </div>
@@ -895,8 +911,9 @@ export default function App() {
         homeTeam={homeTeam}
         awayTeam={awayTeam}
         period={period}
+        totalRegularPeriods={settings.totalRegularPeriods}
+        settings={settings}
         events={events}
-        gameSettings={settings}
       />
 
       {/* Reset Confirmation Dialog */}

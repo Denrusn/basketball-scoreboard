@@ -9,9 +9,11 @@ import {
   Flame, 
   ShieldAlert, 
   Clock, 
-  Award 
+  Award,
+  FileSpreadsheet
 } from 'lucide-react';
 import { GameEvent, Team } from '../types';
+import { exportPlayByPlayCSV } from '../utils/exportUtils';
 
 interface EventLogProps {
   events: GameEvent[];
@@ -21,6 +23,8 @@ interface EventLogProps {
   onUndo: () => void;
   onClearEvents: () => void;
   panelOpacity?: number;
+  period?: number;
+  totalRegularPeriods?: number;
 }
 
 export const EventLog: React.FC<EventLogProps> = ({
@@ -31,6 +35,8 @@ export const EventLog: React.FC<EventLogProps> = ({
   onUndo,
   onClearEvents,
   panelOpacity = 80,
+  period = 1,
+  totalRegularPeriods = 4,
 }) => {
   const [filter, setFilter] = useState<'all' | 'home' | 'away' | 'score'>('all');
   const [copied, setCopied] = useState(false);
@@ -91,23 +97,33 @@ export const EventLog: React.FC<EventLogProps> = ({
           </span>
         </div>
 
-        {/* Action buttons: Undo, Copy, Clear */}
+        {/* Action buttons: Undo, Copy, Export CSV, Clear */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={onUndo}
             disabled={!canUndo}
             title="撤销上一步操作 (Ctrl+Z)"
-            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-20 disabled:pointer-events-none transition-colors shadow-sm"
+            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-20 disabled:pointer-events-none transition-colors shadow-sm cursor-pointer"
           >
             <Undo2 className="w-3.5 h-3.5" />
             <span>撤销</span>
           </button>
 
           <button
+            onClick={() => exportPlayByPlayCSV(events, homeTeam, awayTeam, period || 1, totalRegularPeriods || 4)}
+            disabled={events.length === 0}
+            title="导出为 Excel / CSV 表格"
+            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg border border-white/5 disabled:opacity-20 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">导出表格</span>
+          </button>
+
+          <button
             onClick={handleCopyLog}
             disabled={events.length === 0}
             title="复制流水"
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-white/5 disabled:opacity-20 transition-colors"
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-white/5 disabled:opacity-20 transition-colors cursor-pointer"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
@@ -116,7 +132,7 @@ export const EventLog: React.FC<EventLogProps> = ({
             onClick={onClearEvents}
             disabled={events.length === 0}
             title="清空流水"
-            className="p-1.5 bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg border border-white/5 disabled:opacity-20 transition-colors"
+            className="p-1.5 bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg border border-white/5 disabled:opacity-20 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
