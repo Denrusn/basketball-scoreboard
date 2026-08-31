@@ -1,0 +1,6 @@
+{
+  "name": "篮球比赛记分板 (Basketball Scoreboard)",
+  "description": "专业电子篮球记分板与技术统计工具，支持倒计时、24秒进攻计时、犯规与暂停统计、得分事件流水与球员数据记录。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
