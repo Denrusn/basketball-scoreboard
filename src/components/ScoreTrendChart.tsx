@@ -350,13 +350,13 @@ export const ScoreTrendChart: React.FC<ScoreTrendChartProps> = ({
           ) : (
             <AreaChart data={trendData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }}>
               <defs>
-                <linearGradient id="homeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={homeColor} stopOpacity={0.5} />
-                  <stop offset="95%" stopColor={homeColor} stopOpacity={0.05} />
+                <linearGradient id="marginGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05} />
                 </linearGradient>
-                <linearGradient id="awayGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={awayColor} stopOpacity={0.5} />
-                  <stop offset="95%" stopColor={awayColor} stopOpacity={0.05} />
+                <linearGradient id="marginBelowZero" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -413,7 +413,7 @@ export const ScoreTrendChart: React.FC<ScoreTrendChartProps> = ({
                 name="领先分差"
                 stroke="#f59e0b"
                 strokeWidth={2}
-                fill="url(#homeGradient)"
+                fill="url(#marginGradient)"
               />
             </AreaChart>
           )}
