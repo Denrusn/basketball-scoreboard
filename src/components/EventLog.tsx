@@ -10,6 +10,9 @@ import {
   ShieldAlert, 
   Clock, 
   Award,
+  Shield,
+  Zap,
+  Volume2,
   FileSpreadsheet
 } from 'lucide-react';
 import { GameEvent, Team } from '../types';
@@ -38,7 +41,7 @@ export const EventLog: React.FC<EventLogProps> = ({
   period = 1,
   totalRegularPeriods = 4,
 }) => {
-  const [filter, setFilter] = useState<'all' | 'home' | 'away' | 'score'>('all');
+  const [filter, setFilter] = useState<'all' | 'home' | 'away' | 'score' | 'stats'>('all');
   const [copied, setCopied] = useState(false);
 
   const filteredEvents = events.filter((ev) => {
@@ -46,6 +49,7 @@ export const EventLog: React.FC<EventLogProps> = ({
     if (filter === 'home') return ev.teamId === 'home';
     if (filter === 'away') return ev.teamId === 'away';
     if (filter === 'score') return ev.type === 'score';
+    if (filter === 'stats') return ev.type === 'rebound' || ev.type === 'assist' || ev.type === 'foul';
     return true;
   });
 
@@ -70,6 +74,9 @@ export const EventLog: React.FC<EventLogProps> = ({
       if (event.points === 1) return <Award className="w-3.5 h-3.5 text-slate-300" />;
       return <Award className="w-3.5 h-3.5 text-amber-400" />;
     }
+    if (event.type === 'rebound') return <Shield className="w-3.5 h-3.5 text-amber-400" />;
+    if (event.type === 'assist') return <Zap className="w-3.5 h-3.5 text-cyan-400" />;
+    if (event.type === 'time_announcement') return <Volume2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />;
     if (event.type === 'foul') return <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />;
     if (event.type === 'timeout') return <Clock className="w-3.5 h-3.5 text-cyan-400" />;
     return <History className="w-3.5 h-3.5 text-slate-400" />;

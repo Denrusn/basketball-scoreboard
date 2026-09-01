@@ -504,7 +504,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                     </div>
                   )}
 
-                  {/* Team Fouls & Timeouts Summary */}
+                  {/* Team Stats Summary */}
                   <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 grid grid-cols-2 gap-2 text-xs">
                     <div className="border-r border-slate-800/80 pr-2">
                       <div className="text-amber-400 font-bold text-[11px] truncate mb-1">
@@ -512,12 +512,16 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-300 space-y-0.5">
                         <div className="flex justify-between">
-                          <span className="text-slate-400">犯规:</span>
-                          <span className="font-digital font-bold text-rose-400">{homeTeam.fouls} 次</span>
+                          <span className="text-slate-400">篮板 / 助攻:</span>
+                          <span className="font-digital font-bold text-amber-300">
+                            {homeTeam.rebounds || 0}板 / {homeTeam.assists || 0}助
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-400">剩暂停:</span>
-                          <span className="font-digital font-bold text-sky-400">{homeTeam.timeoutsLeft} 次</span>
+                          <span className="text-slate-400">犯规 / 剩暂停:</span>
+                          <span className="font-digital font-bold text-rose-400">
+                            {homeTeam.fouls}犯 / {homeTeam.timeoutsLeft}停
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -528,12 +532,16 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-300 space-y-0.5">
                         <div className="flex justify-between">
-                          <span className="text-slate-400">犯规:</span>
-                          <span className="font-digital font-bold text-rose-400">{awayTeam.fouls} 次</span>
+                          <span className="text-slate-400">篮板 / 助攻:</span>
+                          <span className="font-digital font-bold text-cyan-300">
+                            {awayTeam.rebounds || 0}板 / {awayTeam.assists || 0}助
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-400">剩暂停:</span>
-                          <span className="font-digital font-bold text-sky-400">{awayTeam.timeoutsLeft} 次</span>
+                          <span className="text-slate-400">犯规 / 剩暂停:</span>
+                          <span className="font-digital font-bold text-rose-400">
+                            {awayTeam.fouls}犯 / {awayTeam.timeoutsLeft}停
+                          </span>
                         </div>
                       </div>
                     </div>

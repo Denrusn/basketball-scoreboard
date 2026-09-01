@@ -17,9 +17,11 @@ import {
   History,
   ChevronDown,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  Target,
+  HelpCircle
 } from 'lucide-react';
-import { Team } from '../types';
+import { Team, GameSettings } from '../types';
 
 interface ScoreboardHeaderProps {
   period: number;
@@ -27,6 +29,10 @@ interface ScoreboardHeaderProps {
   homeTeam: Team;
   awayTeam: Team;
   soundEnabled: boolean;
+  voiceAnnouncementsEnabled?: boolean;
+  onToggleVoiceAnnouncements?: () => void;
+  onTestVoiceAnnouncement?: () => void;
+  settings?: GameSettings;
   useShotClock?: boolean;
   panelOpacity?: number;
   onToggleShotClock?: () => void;
@@ -37,6 +43,7 @@ interface ScoreboardHeaderProps {
   onPlayHorn: () => void;
   onPlayWhistle: () => void;
   onOpenEvents?: () => void;
+  onOpenHelp?: () => void;
   eventsCount?: number;
   onOpenSettings: () => void;
   onOpenSummary: () => void;
@@ -52,6 +59,10 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   homeTeam,
   awayTeam,
   soundEnabled,
+  voiceAnnouncementsEnabled = true,
+  onToggleVoiceAnnouncements,
+  onTestVoiceAnnouncement,
+  settings,
   useShotClock = true,
   panelOpacity = 75,
   onToggleShotClock,
@@ -62,6 +73,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   onPlayHorn,
   onPlayWhistle,
   onOpenEvents,
+  onOpenHelp,
   eventsCount = 0,
   onOpenSettings,
   onOpenSummary,
@@ -239,7 +251,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
           </div>
 
           {/* Period Selector Secondary Menu */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 flex items-center gap-1.5">
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'period' ? null : 'period')}
               title="切换比赛节次与加时赛"
@@ -252,6 +264,18 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
               <span>{period <= totalRegularPeriods ? `第 ${period} 节` : `加时 OT${period - totalRegularPeriods}`}</span>
               <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-80" />
             </button>
+
+            {/* Match Mode Badge (Target Score vs Standard Time) */}
+            {settings?.matchMode === 'target_score' ? (
+              <button
+                onClick={onOpenSettings}
+                title="当前为单节抢分目标制，点击可调整目标分"
+                className="hidden sm:flex items-center gap-1 h-7 sm:h-8 md:h-9 px-2 sm:px-2.5 rounded-lg md:rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Target className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
+                <span>目标 {settings.targetScorePerPeriod || 30}分/节</span>
+              </button>
+            ) : null}
 
             {activeDropdown === 'period' && (
               <div className="absolute left-0 top-full mt-1.5 w-64 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl z-50 animate-in fade-in zoom-in-95">
@@ -414,6 +438,37 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                     </button>
                   )}
 
+                  {onToggleVoiceAnnouncements && (
+                    <button
+                      onClick={onToggleVoiceAnnouncements}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Volume2 className="w-4 h-4 text-amber-400" />
+                        <span>关键节点语音播报</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${voiceAnnouncementsEnabled ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>
+                        {voiceAnnouncementsEnabled ? '剩余2分/1分' : '已关闭'}
+                      </span>
+                    </button>
+                  )}
+
+                  {onTestVoiceAnnouncement && (
+                    <button
+                      onClick={() => {
+                        onTestVoiceAnnouncement();
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold flex items-center justify-between transition-colors border border-amber-500/20 cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>试听本节语音播报</span>
+                      </span>
+                      <span className="text-[10px] text-amber-400/80">试听</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={onToggleSound}
                     className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors mt-0.5 border-t border-white/5 pt-2 cursor-pointer"
@@ -429,7 +484,24 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             )}
           </div>
 
-          {/* 3. Match Stats & Events Secondary Menu */}
+          {/* 3. Direct Play-by-Play Events Quick Button */}
+          {onOpenEvents && (
+            <button
+              onClick={onOpenEvents}
+              title="查看实时比赛流水记录"
+              className="h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-2.5 lg:px-3 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10 hover:border-amber-400/40"
+            >
+              <History className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">流水</span>
+              {eventsCount > 0 && (
+                <span className="bg-amber-400 text-slate-950 text-[9px] md:text-[10px] font-digital font-black px-1 rounded-full">
+                  {eventsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* 4. Match Stats & Events Secondary Menu */}
           <div className="relative">
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'stats' ? null : 'stats')}
@@ -442,11 +514,6 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             >
               <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
               <span className="hidden md:inline whitespace-nowrap">数据</span>
-              {eventsCount > 0 && (
-                <span className="bg-amber-400 text-slate-950 text-[9px] md:text-[10px] font-digital font-black px-1 rounded-full">
-                  {eventsCount}
-                </span>
-              )}
               <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
             </button>
 
@@ -582,6 +649,42 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       <span>比赛规则与外观设置</span>
                     </span>
                   </button>
+
+                  {/* 1. Event Log in Settings */}
+                  {onOpenEvents && (
+                    <button
+                      onClick={() => {
+                        onOpenEvents();
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <History className="w-4 h-4 text-amber-400" />
+                        <span>比赛实时流水记录</span>
+                      </span>
+                      <span className="text-[10px] bg-amber-500/20 text-amber-300 font-digital px-1.5 py-0.2 rounded">
+                        {eventsCount}条
+                      </span>
+                    </button>
+                  )}
+
+                  {/* 2. Operation Guide & Shortcuts in Settings */}
+                  {onOpenHelp && (
+                    <button
+                      onClick={() => {
+                        onOpenHelp();
+                        setActiveDropdown(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <HelpCircle className="w-4 h-4 text-sky-400" />
+                        <span>技术台操作指引与快捷键</span>
+                      </span>
+                      <span className="text-[10px] text-sky-300 font-semibold">手册</span>
+                    </button>
+                  )}
 
                   {/* Reset Game */}
                   <button

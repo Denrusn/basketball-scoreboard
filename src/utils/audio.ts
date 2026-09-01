@@ -165,3 +165,58 @@ export function playScoreBeep(points = 2) {
   osc.start(now);
   osc.stop(now + 0.15);
 }
+
+/**
+ * Voice Announcement for crucial remaining time in a period (Web Speech API)
+ * E.g., "第一节比赛剩余两分钟", "第二节比赛剩余一分钟", "加时赛比赛剩余两分钟"
+ */
+export function speakPeriodTimeRemaining(
+  period: number,
+  totalRegularPeriods = 4,
+  minutesRemaining: number
+): string {
+  const chineseNumbers = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+  const minText = minutesRemaining === 2 ? '两分钟' : minutesRemaining === 1 ? '一分钟' : `${minutesRemaining}分钟`;
+
+  let periodPrefix = '';
+  if (period <= totalRegularPeriods) {
+    const pStr = chineseNumbers[period - 1] || String(period);
+    periodPrefix = `第${pStr}节比赛`;
+  } else {
+    const otIdx = period - totalRegularPeriods;
+    if (otIdx === 1) {
+      periodPrefix = '加时赛比赛';
+    } else {
+      const otStr = chineseNumbers[otIdx - 1] || String(otIdx);
+      periodPrefix = `加时赛第${otStr}节比赛`;
+    }
+  }
+
+  const broadcastText = `${periodPrefix}剩余${minText}`;
+
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(broadcastText);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      // Try to match standard Chinese voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const zhVoice = voices.find(
+        (v) => v.lang === 'zh-CN' || v.lang.startsWith('zh') || v.lang.includes('cmn')
+      );
+      if (zhVoice) {
+        utterance.voice = zhVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech synthesis failed:', e);
+    }
+  }
+
+  return broadcastText;
+}
+

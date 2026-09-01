@@ -14,8 +14,8 @@
 
 /* Fluid responsive scoreboard typography using CSS clamp */
 .score-fluid-text {
-  font-size: clamp(2.75rem, 7vw, 9.5rem);
-  line-height: 0.92;
+  font-size: clamp(3.5rem, 9.5vw, 13rem);
+  line-height: 0.88;
 }
 
 .clock-fluid-text {
@@ -91,7 +91,8 @@
     padding: 0.375rem !important;
   }
   .score-fluid-text {
-    font-size: clamp(2rem, 9vh, 3.75rem) !important;
+    font-size: clamp(2.75rem, 16vh, 5.5rem) !important;
+    line-height: 0.88 !important;
   }
   .clock-fluid-text {
     font-size: clamp(1.4rem, 7vh, 2.5rem) !important;

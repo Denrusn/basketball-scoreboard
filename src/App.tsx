@@ -9,8 +9,10 @@ import { RosterStatsModal } from './components/RosterStatsModal';
 import { GameSettingsModal } from './components/GameSettingsModal';
 import { GameSummaryModal } from './components/GameSummaryModal';
 import { BasketballCourtBackground } from './components/BasketballCourtBackground';
-import { RotateCcw, AlertCircle, HelpCircle, ShieldCheck, Check } from 'lucide-react';
-import { playStadiumHorn, playWhistle, playShotClockBuzzer, playScoreBeep } from './utils/audio';
+import { PeriodEndModal } from './components/PeriodEndModal';
+import { HelpGuideModal } from './components/HelpGuideModal';
+import { RotateCcw, AlertCircle, HelpCircle, ShieldCheck, Check, Volume2, Sparkles } from 'lucide-react';
+import { playStadiumHorn, playWhistle, playShotClockBuzzer, playScoreBeep, speakPeriodTimeRemaining } from './utils/audio';
 
 const STORAGE_KEY = 'basketball_live_match_state_v1';
 
@@ -40,6 +42,8 @@ const loadSavedState = (): SavedState | null => {
 };
 
 const INITIAL_SETTINGS: GameSettings = {
+  matchMode: 'time',
+  targetScorePerPeriod: 30,
   periodMinutes: 10,
   overtimeMinutes: 5,
   totalRegularPeriods: 4,
@@ -50,6 +54,7 @@ const INITIAL_SETTINGS: GameSettings = {
   foulsForDoubleBonus: 7,
   maxTimeouts: 5,
   soundEnabled: true,
+  voiceAnnouncementsEnabled: true,
   panelOpacity: 75,
 };
 
@@ -61,14 +66,16 @@ const INITIAL_HOME_TEAM: Team = {
   accentColor: '#991B1B',
   score: 0,
   fouls: 0,
+  rebounds: 0,
+  assists: 0,
   timeoutsLeft: 5,
   quarterScores: [0, 0, 0, 0],
   players: [
-    { id: 'h1', number: 7, name: '1号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h2', number: 11, name: '2号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h3', number: 23, name: '3号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h4', number: 30, name: '4号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'h5', number: 35, name: '5号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h1', number: 7, name: '1号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h2', number: 11, name: '2号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h3', number: 23, name: '3号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h4', number: 30, name: '4号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'h5', number: 35, name: '5号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
   ],
 };
 
@@ -80,14 +87,16 @@ const INITIAL_AWAY_TEAM: Team = {
   accentColor: '#1D4ED8',
   score: 0,
   fouls: 0,
+  rebounds: 0,
+  assists: 0,
   timeoutsLeft: 5,
   quarterScores: [0, 0, 0, 0],
   players: [
-    { id: 'a1', number: 1, name: '1号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a2', number: 3, name: '2号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a3', number: 8, name: '3号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a4', number: 13, name: '4号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
-    { id: 'a5', number: 24, name: '5号球员', points: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a1', number: 1, name: '1号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a2', number: 3, name: '2号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a3', number: 8, name: '3号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a4', number: 13, name: '4号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
+    { id: 'a5', number: 24, name: '5号球员', points: 0, rebounds: 0, assists: 0, fouls: 0, isOnCourt: true, twoPointers: 0, threePointers: 0, freeThrows: 0 },
   ],
 };
 
@@ -126,6 +135,27 @@ export default function App() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isEventsOpen, setIsEventsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Big Screen Period End Prompt Modal
+  const [periodEndModalData, setPeriodEndModalData] = useState<{
+    isOpen: boolean;
+    endedPeriod: number;
+    winnerTeamName?: string;
+    isTargetScoreReached?: boolean;
+  } | null>(null);
+
+  // Crucial remaining time voice announcement tracking
+  const announcedMilestonesRef = React.useRef<Set<string>>(new Set());
+  const [voiceBroadcastToast, setVoiceBroadcastToast] = useState<{ text: string; id: number } | null>(null);
+
+  useEffect(() => {
+    if (!voiceBroadcastToast) return;
+    const timer = setTimeout(() => {
+      setVoiceBroadcastToast(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [voiceBroadcastToast]);
 
   // Anti-Refresh & Accidental Leave Protection (Browser Dialog)
   useEffect(() => {
@@ -225,6 +255,12 @@ export default function App() {
           awayScore: awayTeam.score,
           homeFouls: homeTeam.fouls,
           awayFouls: awayTeam.fouls,
+          homeRebounds: homeTeam.rebounds || 0,
+          awayRebounds: awayTeam.rebounds || 0,
+          homeAssists: homeTeam.assists || 0,
+          awayAssists: awayTeam.assists || 0,
+          homePlayers: homeTeam.players.map((p) => ({ ...p })),
+          awayPlayers: awayTeam.players.map((p) => ({ ...p })),
           homeTimeouts: homeTeam.timeoutsLeft,
           awayTimeouts: awayTeam.timeoutsLeft,
           homeQuarterScores: [...homeTeam.quarterScores],
@@ -278,8 +314,37 @@ export default function App() {
             setIsShotClockRunning(false);
             triggerHorn();
             recordEvent('period_end', `第 ${period} 节比赛结束！`);
+            setPeriodEndModalData({
+              isOpen: true,
+              endedPeriod: period,
+              isTargetScoreReached: false,
+            });
             return 0;
           }
+
+          // Voice Broadcast: Crucial 2-minute and 1-minute remaining marks for timed matches
+          // "每一节比赛的最后两分钟和最后一分钟的时间开始进行语音播报，就播报说：第某节比赛剩余多少多少分钟。当然，这个规则只适用于计时的比赛，不适用于抢分的比赛"
+          if (
+            settings.matchMode !== 'target_score' &&
+            settings.soundEnabled &&
+            settings.voiceAnnouncementsEnabled !== false
+          ) {
+            // Exactly 2 minutes left (1200 tenths = 120.0 seconds)
+            if (prevGame === 1200 && !announcedMilestonesRef.current.has(`${period}_2min`)) {
+              announcedMilestonesRef.current.add(`${period}_2min`);
+              const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 2);
+              recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
+              setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
+            }
+            // Exactly 1 minute left (600 tenths = 60.0 seconds)
+            else if (prevGame === 600 && !announcedMilestonesRef.current.has(`${period}_1min`)) {
+              announcedMilestonesRef.current.add(`${period}_1min`);
+              const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 1);
+              recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
+              setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
+            }
+          }
+
           return prevGame - 1;
         });
 
@@ -301,13 +366,26 @@ export default function App() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isGameClockRunning, isShotClockRunning, period, settings.useShotClock, triggerHorn, triggerShotBuzzer, recordEvent]);
+  }, [
+    isGameClockRunning,
+    isShotClockRunning,
+    period,
+    settings.useShotClock,
+    settings.matchMode,
+    settings.soundEnabled,
+    settings.voiceAnnouncementsEnabled,
+    settings.totalRegularPeriods,
+    triggerHorn,
+    triggerShotBuzzer,
+    recordEvent,
+  ]);
 
   // Handle Game Clock Play / Pause
   const handleToggleGameClock = () => {
     if (!isGameClockRunning && gameClockTenths === 0) {
       const minutes = period > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
       setGameClockTenths(minutes * 60 * 10);
+      announcedMilestonesRef.current.clear();
       if (settings.useShotClock) {
         setShotClockTenths(settings.shotClockSeconds * 10);
       }
@@ -332,15 +410,32 @@ export default function App() {
   const handleResetGameClock = () => {
     const minutes = period > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
     setGameClockTenths(minutes * 60 * 10);
+    announcedMilestonesRef.current.clear();
     setIsGameClockRunning(false);
   };
 
   const handleAdjustGameClock = (deltaSeconds: number) => {
-    setGameClockTenths((prev) => Math.max(0, prev + deltaSeconds * 10));
+    setGameClockTenths((prev) => {
+      const nextVal = Math.max(0, prev + deltaSeconds * 10);
+      if (nextVal > 1200) {
+        announcedMilestonesRef.current.delete(`${period}_2min`);
+        announcedMilestonesRef.current.delete(`${period}_1min`);
+      } else if (nextVal > 600) {
+        announcedMilestonesRef.current.delete(`${period}_1min`);
+      }
+      return nextVal;
+    });
   };
 
   const handleSetExactGameClock = (minutes: number, seconds: number, tenths = 0) => {
-    setGameClockTenths((minutes * 60 + seconds) * 10 + tenths);
+    const totalTenths = (minutes * 60 + seconds) * 10 + tenths;
+    if (totalTenths > 1200) {
+      announcedMilestonesRef.current.delete(`${period}_2min`);
+      announcedMilestonesRef.current.delete(`${period}_1min`);
+    } else if (totalTenths > 600) {
+      announcedMilestonesRef.current.delete(`${period}_1min`);
+    }
+    setGameClockTenths(totalTenths);
   };
 
   // Handle Shot Clock
@@ -396,6 +491,7 @@ export default function App() {
   const handleSetPeriod = (newPeriod: number) => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
+    announcedMilestonesRef.current.clear();
 
     // Expand quarter scores array if needed
     if (newPeriod > homeTeam.quarterScores.length) {
@@ -426,6 +522,12 @@ export default function App() {
 
   const handleNextPeriod = () => {
     handleSetPeriod(period + 1);
+  };
+
+  const handleStartNextPeriod = (nextPeriod: number) => {
+    handleSetPeriod(nextPeriod);
+    setPeriodEndModalData(null);
+    triggerWhistle();
   };
 
   // Scoring Handler
@@ -489,6 +591,24 @@ export default function App() {
       if (settings.useShotClock) {
         setShotClockTenths(settings.shotClockSeconds * 10);
       }
+
+      // Check Target Score Mode per period rule
+      if (settings.matchMode === 'target_score') {
+        const targetScore = settings.targetScorePerPeriod || 30;
+        if (newQScore >= targetScore) {
+          setIsGameClockRunning(false);
+          setIsShotClockRunning(false);
+          triggerHorn();
+          const scoringTeamName = isHome ? homeTeam.name : awayTeam.name;
+          recordEvent('period_end', `第 ${period} 节抢分达成！${scoringTeamName} 率先达到单节 ${targetScore} 分目标！`);
+          setPeriodEndModalData({
+            isOpen: true,
+            endedPeriod: period,
+            winnerTeamName: scoringTeamName,
+            isTargetScoreReached: true,
+          });
+        }
+      }
     }
 
     const desc = playerId
@@ -545,6 +665,100 @@ export default function App() {
     recordEvent('foul', desc, teamId, undefined, fouledPlayerName, fouledPlayerNumber);
   };
 
+  // Rebound Handlers
+  const handleRebound = (teamId: 'home' | 'away', delta: number, playerId?: string) => {
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
+    const currentRebounds = targetTeam.rebounds || 0;
+    const newRebounds = Math.max(0, currentRebounds + delta);
+
+    let rebPlayerName: string | undefined;
+    let rebPlayerNumber: number | undefined;
+
+    const updatedPlayers = targetTeam.players.map((p) => {
+      if (p.id === playerId) {
+        rebPlayerName = p.name || `球员 #${p.number}`;
+        rebPlayerNumber = p.number;
+        return {
+          ...p,
+          rebounds: Math.max(0, (p.rebounds || 0) + delta),
+        };
+      }
+      return p;
+    });
+
+    if (isHome) {
+      setHomeTeam((prev) => ({
+        ...prev,
+        rebounds: newRebounds,
+        players: playerId ? updatedPlayers : prev.players,
+      }));
+    } else {
+      setAwayTeam((prev) => ({
+        ...prev,
+        rebounds: newRebounds,
+        players: playerId ? updatedPlayers : prev.players,
+      }));
+    }
+
+    if (delta > 0) {
+      triggerScoreBeep(1);
+    }
+
+    const desc = playerId
+      ? `#${rebPlayerNumber} ${rebPlayerName} 记篮板 (${delta > 0 ? '+1' : '-1'})`
+      : `球队篮板 (${delta > 0 ? '+1' : '-1'})`;
+
+    recordEvent('rebound', desc, teamId, undefined, rebPlayerName, rebPlayerNumber);
+  };
+
+  // Assist Handlers
+  const handleAssist = (teamId: 'home' | 'away', delta: number, playerId?: string) => {
+    const isHome = teamId === 'home';
+    const targetTeam = isHome ? homeTeam : awayTeam;
+    const currentAssists = targetTeam.assists || 0;
+    const newAssists = Math.max(0, currentAssists + delta);
+
+    let astPlayerName: string | undefined;
+    let astPlayerNumber: number | undefined;
+
+    const updatedPlayers = targetTeam.players.map((p) => {
+      if (p.id === playerId) {
+        astPlayerName = p.name || `球员 #${p.number}`;
+        astPlayerNumber = p.number;
+        return {
+          ...p,
+          assists: Math.max(0, (p.assists || 0) + delta),
+        };
+      }
+      return p;
+    });
+
+    if (isHome) {
+      setHomeTeam((prev) => ({
+        ...prev,
+        assists: newAssists,
+        players: playerId ? updatedPlayers : prev.players,
+      }));
+    } else {
+      setAwayTeam((prev) => ({
+        ...prev,
+        assists: newAssists,
+        players: playerId ? updatedPlayers : prev.players,
+      }));
+    }
+
+    if (delta > 0) {
+      triggerScoreBeep(2);
+    }
+
+    const desc = playerId
+      ? `#${astPlayerNumber} ${astPlayerName} 记助攻 (${delta > 0 ? '+1' : '-1'})`
+      : `球队助攻 (${delta > 0 ? '+1' : '-1'})`;
+
+    recordEvent('assist', desc, teamId, undefined, astPlayerName, astPlayerNumber);
+  };
+
   // Timeout Handlers
   const handleTimeout = (teamId: 'home' | 'away') => {
     const isHome = teamId === 'home';
@@ -588,6 +802,12 @@ export default function App() {
         awayScore,
         homeFouls,
         awayFouls,
+        homeRebounds,
+        awayRebounds,
+        homeAssists,
+        awayAssists,
+        homePlayers,
+        awayPlayers,
         homeTimeouts,
         awayTimeouts,
         homeQuarterScores,
@@ -601,6 +821,9 @@ export default function App() {
         ...prev,
         score: homeScore,
         fouls: homeFouls,
+        rebounds: homeRebounds ?? prev.rebounds ?? 0,
+        assists: homeAssists ?? prev.assists ?? 0,
+        players: homePlayers ?? prev.players,
         timeoutsLeft: homeTimeouts,
         quarterScores: homeQuarterScores,
       }));
@@ -609,6 +832,9 @@ export default function App() {
         ...prev,
         score: awayScore,
         fouls: awayFouls,
+        rebounds: awayRebounds ?? prev.rebounds ?? 0,
+        assists: awayAssists ?? prev.assists ?? 0,
+        players: awayPlayers ?? prev.players,
         timeoutsLeft: awayTimeouts,
         quarterScores: awayQuarterScores,
       }));
@@ -687,6 +913,8 @@ export default function App() {
       ...playerData,
       id: 'p_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       points: 0,
+      rebounds: 0,
+      assists: 0,
       fouls: 0,
       twoPointers: 0,
       threePointers: 0,
@@ -724,6 +952,7 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+    announcedMilestonesRef.current.clear();
     setShowRestoreToast(false);
     setPeriod(1);
     setHomeTeam({
@@ -731,14 +960,18 @@ export default function App() {
       name: homeTeam.name,
       shortName: homeTeam.shortName,
       color: homeTeam.color,
-      players: homeTeam.players.map((p) => ({ ...p, points: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
+      rebounds: 0,
+      assists: 0,
+      players: homeTeam.players.map((p) => ({ ...p, points: 0, rebounds: 0, assists: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
     });
     setAwayTeam({
       ...INITIAL_AWAY_TEAM,
       name: awayTeam.name,
       shortName: awayTeam.shortName,
       color: awayTeam.color,
-      players: awayTeam.players.map((p) => ({ ...p, points: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
+      rebounds: 0,
+      assists: 0,
+      players: awayTeam.players.map((p) => ({ ...p, points: 0, rebounds: 0, assists: 0, fouls: 0, twoPointers: 0, threePointers: 0, freeThrows: 0 })),
     });
     setGameClockTenths(settings.periodMinutes * 60 * 10);
     setShotClockTenths(settings.shotClockSeconds * 10);
@@ -746,6 +979,19 @@ export default function App() {
     setIsShotClockRunning(false);
     setEvents([]);
     setIsResetConfirmOpen(false);
+  };
+
+  // Voice Announcement Handlers
+  const handleTestVoiceAnnouncement = () => {
+    const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 2);
+    setVoiceBroadcastToast({ text: `[试听] ${broadcastText}`, id: Date.now() });
+  };
+
+  const handleToggleVoiceAnnouncements = () => {
+    setSettings((prev) => ({
+      ...prev,
+      voiceAnnouncementsEnabled: !(prev.voiceAnnouncementsEnabled ?? true),
+    }));
   };
 
   // Global Keyboard Shortcuts
@@ -792,6 +1038,9 @@ export default function App() {
         homeTeam={homeTeam}
         awayTeam={awayTeam}
         soundEnabled={settings.soundEnabled}
+        voiceAnnouncementsEnabled={settings.voiceAnnouncementsEnabled ?? true}
+        onToggleVoiceAnnouncements={handleToggleVoiceAnnouncements}
+        onTestVoiceAnnouncement={handleTestVoiceAnnouncement}
         useShotClock={settings.useShotClock}
         panelOpacity={currentOpacity}
         onToggleShotClock={handleToggleShotClockEnabled}
@@ -802,6 +1051,7 @@ export default function App() {
         onPlayHorn={triggerHorn}
         onPlayWhistle={triggerWhistle}
         onOpenEvents={() => setIsEventsOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         eventsCount={events.length}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenSummary={() => setIsSummaryOpen(true)}
@@ -809,7 +1059,19 @@ export default function App() {
         onResetGame={() => setIsResetConfirmOpen(true)}
         onSetPeriod={handleSetPeriod}
         onNextPeriod={handleNextPeriod}
+        settings={settings}
       />
+
+      {/* Floating Voice Broadcast Announcement Indicator */}
+      {voiceBroadcastToast && (
+        <div className="fixed top-14 sm:top-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-300 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-amber-500/60 shadow-2xl shadow-amber-500/25 px-4 py-2 rounded-full flex items-center gap-2.5 text-amber-300 text-xs sm:text-sm font-bold">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <Volume2 className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+            <span>{voiceBroadcastToast.text}</span>
+          </div>
+        </div>
+      )}
 
       {/* Main Scoreboard Arena - Balanced responsive layout */}
       <main className="relative z-10 flex-1 w-full max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-1.5 sm:py-3 landscape:py-1.5 flex flex-col justify-between gap-2 sm:gap-3 min-h-0">
@@ -826,12 +1088,23 @@ export default function App() {
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
               panelOpacity={currentOpacity}
+              targetScoreProgress={
+                settings.matchMode === 'target_score'
+                  ? {
+                      currentPeriodScore: homeTeam.quarterScores[period - 1] || 0,
+                      targetScore: settings.targetScorePerPeriod || 30,
+                    }
+                  : undefined
+              }
               onScore={handleScore}
               onFoul={handleFoul}
+              onRebound={handleRebound}
+              onAssist={handleAssist}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
               onUpdateTeamName={handleUpdateTeamName}
               onUpdateTeamColor={handleUpdateTeamColor}
+              onOpenRoster={() => setIsRosterOpen(true)}
             />
           </div>
 
@@ -873,79 +1146,26 @@ export default function App() {
               foulsForDoubleBonus={settings.foulsForDoubleBonus}
               maxTimeouts={settings.maxTimeouts}
               panelOpacity={currentOpacity}
+              targetScoreProgress={
+                settings.matchMode === 'target_score'
+                  ? {
+                      currentPeriodScore: awayTeam.quarterScores[period - 1] || 0,
+                      targetScore: settings.targetScorePerPeriod || 30,
+                    }
+                  : undefined
+              }
               onScore={handleScore}
               onFoul={handleFoul}
+              onRebound={handleRebound}
+              onAssist={handleAssist}
               onTimeout={handleTimeout}
               onAddTimeoutBack={handleAddTimeoutBack}
               onUpdateTeamName={handleUpdateTeamName}
               onUpdateTeamColor={handleUpdateTeamColor}
+              onOpenRoster={() => setIsRosterOpen(true)}
             />
           </div>
         </div>
-
-        {/* Portrait Mode Bottom Section: Play-by-Play Events & Quick Technical Table Tips */}
-        {!isStageMode && (
-          <div className="portrait:grid grid-cols-1 landscape:hidden lg:hidden gap-3 sm:gap-4 mt-2">
-            <div>
-              <EventLog
-                events={events}
-                homeTeam={homeTeam}
-                awayTeam={awayTeam}
-                panelOpacity={currentOpacity}
-                canUndo={events.length > 0}
-                onUndo={handleUndo}
-                onClearEvents={handleClearEvents}
-                period={period}
-                totalRegularPeriods={settings.totalRegularPeriods}
-              />
-            </div>
-
-            {/* Quick Scorekeeper Guide */}
-            <div
-              style={{
-                backgroundColor: `rgba(15, 23, 42, ${Math.max(0.15, currentOpacity / 100)})`,
-                backdropFilter: currentOpacity < 95 ? 'blur(8px)' : 'none',
-              }}
-              className="rounded-2xl p-3 sm:p-4 border border-white/10 flex flex-col justify-between shadow-2xl shadow-black/50 transition-colors duration-200"
-            >
-              <div>
-                <div className="flex items-center gap-2 text-amber-400 mb-2 font-bold text-xs uppercase tracking-wider">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>技术台快捷操作指引</span>
-                </div>
-                <ul className="text-[11px] sm:text-xs text-slate-300 space-y-1.5 leading-relaxed">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>快捷记分：</strong>点击 +1 / +2 / +3 快速记分，并自动记录得分球员数据。</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>时钟控制：</strong>按键盘 <kbd className="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">空格</kbd> 启停，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">R</kbd> 重置 24s，按 <kbd className="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-amber-300 border border-white/10">E</kbd> 重置 14s。</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>24s 进攻时钟：</strong>支持随时一键禁用/启用 24s 进攻时钟（符合 FIBA 规则，适合比赛终场最后进攻或特殊判例）。</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-amber-400 font-bold">•</span>
-                    <span><strong>透明度与球衣：</strong>点击右上角眼睛图标滑动调节透明度，点击队名旁调色板更换球衣配色。</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-digital">
-                <span>单节: {settings.periodMinutes}分钟</span>
-                <span>BONUS: {settings.foulsForBonus}犯</span>
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="text-amber-400 hover:text-amber-300 font-bold transition-colors underline"
-                >
-                  更多规则设置 &gt;
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Play-by-Play Event Log Modal / Drawer */}
@@ -983,6 +1203,27 @@ export default function App() {
         </div>
       )}
 
+      {/* Period End Big Center Modal Prompt */}
+      {periodEndModalData?.isOpen && (
+        <PeriodEndModal
+          isOpen={periodEndModalData.isOpen}
+          endedPeriod={periodEndModalData.endedPeriod}
+          totalRegularPeriods={settings.totalRegularPeriods}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          matchMode={settings.matchMode || 'time'}
+          targetScorePerPeriod={settings.targetScorePerPeriod || 30}
+          isTargetScoreReached={periodEndModalData.isTargetScoreReached}
+          winnerTeamName={periodEndModalData.winnerTeamName}
+          onStartNextPeriod={handleStartNextPeriod}
+          onOpenSummary={() => {
+            setPeriodEndModalData(null);
+            setIsSummaryOpen(true);
+          }}
+          onClose={() => setPeriodEndModalData(null)}
+        />
+      )}
+
       {/* Roster & Player Stats Modal */}
       <RosterStatsModal
         isOpen={isRosterOpen}
@@ -991,9 +1232,11 @@ export default function App() {
         awayTeam={awayTeam}
         onAddPlayer={handleAddPlayer}
         onRemovePlayer={handleRemovePlayer}
-        onToggleOnCourt={handleTogglePlayerCourt}
-        onQuickScore={handleScore}
-        onQuickFoul={handleFoul}
+        onTogglePlayerCourt={handleTogglePlayerCourt}
+        onScorePlayer={handleScore}
+        onFoulPlayer={(tId, pId) => handleFoul(tId, 1, pId)}
+        onReboundPlayer={(tId, pId) => handleRebound(tId, 1, pId)}
+        onAssistPlayer={(tId, pId) => handleAssist(tId, 1, pId)}
       />
 
       {/* Settings Modal */}
@@ -1016,6 +1259,16 @@ export default function App() {
         totalRegularPeriods={settings.totalRegularPeriods}
         settings={settings}
         events={events}
+      />
+
+      {/* Operation Guide & Shortcuts Modal */}
+      <HelpGuideModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        onOpenSettings={() => {
+          setIsHelpOpen(false);
+          setIsSettingsOpen(true);
+        }}
       />
 
       {/* Reset Confirmation Dialog */}

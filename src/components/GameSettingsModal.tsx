@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Sliders, Keyboard, Check, Volume2, Eye, Palette, Timer, TimerOff } from 'lucide-react';
-import { GameSettings, Team } from '../types';
+import { X, Sliders, Keyboard, Check, Volume2, Eye, Palette, Timer, TimerOff, Target, Clock, Sparkles } from 'lucide-react';
+import { GameSettings, Team, MatchMode } from '../types';
 import { JERSEY_COLOR_PRESETS } from '../utils/teamColors';
 import { TeamColorPicker } from './TeamColorPicker';
+import { speakPeriodTimeRemaining } from '../utils/audio';
 
 interface GameSettingsModalProps {
   isOpen: boolean;
@@ -29,6 +30,9 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   awayTeam,
   onSaveSettings,
 }) => {
+  const [matchMode, setMatchMode] = useState<MatchMode>(settings.matchMode || 'time');
+  const [targetScorePerPeriod, setTargetScorePerPeriod] = useState(settings.targetScorePerPeriod || 30);
+  const [customTargetInput, setCustomTargetInput] = useState(String(settings.targetScorePerPeriod || 30));
   const [periodMinutes, setPeriodMinutes] = useState(settings.periodMinutes);
   const [overtimeMinutes, setOvertimeMinutes] = useState(settings.overtimeMinutes);
   const [useShotClock, setUseShotClock] = useState(settings.useShotClock ?? true);
@@ -37,6 +41,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const [foulsForBonus, setFoulsForBonus] = useState(settings.foulsForBonus);
   const [maxTimeouts, setMaxTimeouts] = useState(settings.maxTimeouts);
   const [soundEnabled, setSoundEnabled] = useState(settings.soundEnabled);
+  const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(settings.voiceAnnouncementsEnabled ?? true);
   const [panelOpacity, setPanelOpacity] = useState(settings.panelOpacity ?? 75);
 
   const [homeName, setHomeName] = useState(homeTeam.name);
@@ -51,9 +56,13 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalTargetScore = parseInt(customTargetInput, 10) || targetScorePerPeriod || 30;
+
     onSaveSettings(
       {
         ...settings,
+        matchMode,
+        targetScorePerPeriod: finalTargetScore,
         periodMinutes,
         overtimeMinutes,
         useShotClock,
@@ -63,6 +72,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
         foulsForDoubleBonus: foulsForBonus + 2,
         maxTimeouts,
         soundEnabled,
+        voiceAnnouncementsEnabled,
         panelOpacity,
       },
       homeName,
@@ -76,6 +86,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   };
 
   const presetFiba = () => {
+    setMatchMode('time');
     setPeriodMinutes(10);
     setOvertimeMinutes(5);
     setUseShotClock(true);
@@ -85,6 +96,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   };
 
   const presetNba = () => {
+    setMatchMode('time');
     setPeriodMinutes(12);
     setOvertimeMinutes(5);
     setUseShotClock(true);
@@ -93,9 +105,11 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
     setFoulsForBonus(5);
   };
 
-  const presetYouth = () => {
-    setPeriodMinutes(8);
-    setOvertimeMinutes(4);
+  const presetTargetScore30 = () => {
+    setMatchMode('target_score');
+    setTargetScorePerPeriod(30);
+    setCustomTargetInput('30');
+    setPeriodMinutes(10);
     setUseShotClock(true);
     setShotClockSeconds(24);
     setShotClockOffensiveReboundSeconds(14);
@@ -103,12 +117,18 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   };
 
   const preset3x3 = () => {
+    setMatchMode('time');
     setPeriodMinutes(10);
     setOvertimeMinutes(0);
     setUseShotClock(true);
     setShotClockSeconds(12);
     setShotClockOffensiveReboundSeconds(12);
     setFoulsForBonus(7);
+  };
+
+  const handleSelectPresetTarget = (score: number) => {
+    setTargetScorePerPeriod(score);
+    setCustomTargetInput(String(score));
   };
 
   return (
@@ -121,13 +141,13 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">比赛规则与外观自定义</h2>
-              <p className="text-xs text-slate-400">默认 FIBA 国际标准规则，支持 24s 进攻时钟启用/禁用、节次时长、球衣配色、面板透明度</p>
+              <h2 className="text-lg font-bold text-white">比赛规则与模式设置</h2>
+              <p className="text-xs text-slate-400">支持常规计时制、单节目标分制 (20/25/30分/自定义)、24s进攻时钟及外观调节</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -135,6 +155,173 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-sm">
+          {/* Match Mode Selection Section */}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-amber-500/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-amber-400" />
+                比赛模式设置 (计时制 vs 目标得分制)
+              </h3>
+              <span className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
+                {matchMode === 'target_score' ? `抢分目标制 (${targetScorePerPeriod}分/节)` : '标准计时制'}
+              </span>
+            </div>
+
+            {/* Mode Selector Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option 1: Standard Time Mode */}
+              <button
+                type="button"
+                onClick={() => setMatchMode('time')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  matchMode === 'time'
+                    ? 'bg-amber-500/15 border-amber-400 shadow-md shadow-amber-500/10'
+                    : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    ⏱ 标准计时模式 (Time-Based)
+                  </span>
+                  {matchMode === 'time' && (
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400" />
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  每节固定时长（如 10 分钟），倒计时结束该节比赛结束。
+                </p>
+              </button>
+
+              {/* Option 2: Target Score Mode */}
+              <button
+                type="button"
+                onClick={() => setMatchMode('target_score')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  matchMode === 'target_score'
+                    ? 'bg-amber-500/15 border-amber-400 shadow-md shadow-amber-500/10'
+                    : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                    <Target className="w-4 h-4 text-emerald-400" />
+                    🎯 单节抢分目标制 (Target Score)
+                  </span>
+                  {matchMode === 'target_score' && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 leading-snug">
+                  按单节分数设计，任意队伍单节率先达到目标分（如 30 分）该节立即结束。
+                </p>
+              </button>
+            </div>
+
+            {/* Target Score Options if target_score is active */}
+            {matchMode === 'target_score' && (
+              <div className="pt-3 border-t border-white/10 space-y-2.5 animate-in fade-in">
+                <label className="block text-xs font-semibold text-slate-300">
+                  单节目标得分设置 (默认 30 分，可快速选择或自定义输入):
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[20, 25, 30].map((pts) => (
+                    <button
+                      key={pts}
+                      type="button"
+                      onClick={() => handleSelectPresetTarget(pts)}
+                      className={`py-2 px-3 rounded-xl font-digital text-sm font-black border transition-all cursor-pointer ${
+                        targetScorePerPeriod === pts && customTargetInput === String(pts)
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                          : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/50 hover:bg-slate-800'
+                      }`}
+                    >
+                      {pts} 分
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = parseInt(customTargetInput, 10) || 30;
+                      setTargetScorePerPeriod(val);
+                    }}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      ![20, 25, 30].includes(targetScorePerPeriod)
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black'
+                        : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                    }`}
+                  >
+                    自定义
+                  </button>
+                </div>
+
+                {/* Custom Number Input */}
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-slate-400 whitespace-nowrap">自定义目标分:</span>
+                  <input
+                    type="number"
+                    min="5"
+                    max="200"
+                    value={customTargetInput}
+                    onChange={(e) => {
+                      setCustomTargetInput(e.target.value);
+                      const num = parseInt(e.target.value, 10);
+                      if (!isNaN(num) && num > 0) {
+                        setTargetScorePerPeriod(num);
+                      }
+                    }}
+                    className="w-24 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-white font-digital font-bold text-center text-sm focus:border-amber-400 focus:outline-none"
+                  />
+                  <span className="text-xs text-slate-400">分 / 节</span>
+                  <span className="text-[11px] text-amber-400 ml-auto">
+                    (任一队本节先达到 <strong>{customTargetInput || targetScorePerPeriod}</strong> 分则本节结束)
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Presets */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-2">
+              快速赛事规则预设:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={presetTargetScore30}
+                className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                  matchMode === 'target_score' && targetScorePerPeriod === 30
+                    ? 'bg-amber-500 text-slate-950 border-amber-400'
+                    : 'bg-slate-950 border-emerald-500/40 hover:border-emerald-400 text-emerald-300'
+                }`}
+              >
+                🎯 目标分 30分/节 (默认抢分)
+              </button>
+              <button
+                type="button"
+                onClick={presetFiba}
+                className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 hover:border-amber-400 hover:bg-slate-800/80 text-xs font-bold text-amber-300 transition-all text-center cursor-pointer"
+              >
+                ★ FIBA 国际标准 (10分+24s)
+              </button>
+              <button
+                type="button"
+                onClick={presetNba}
+                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center cursor-pointer"
+              >
+                NBA / 职业联赛 (12分+24s)
+              </button>
+              <button
+                type="button"
+                onClick={preset3x3}
+                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center cursor-pointer"
+              >
+                三人篮球 3x3 (10分+12s)
+              </button>
+            </div>
+          </div>
+
           {/* Visual Appearance Section: Opacity & Theme Colors */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
@@ -166,62 +353,25 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setPanelOpacity(40)}
-                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
                 >
                   超透视 40%
                 </button>
                 <button
                   type="button"
                   onClick={() => setPanelOpacity(75)}
-                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
                 >
                   推荐 75%
                 </button>
                 <button
                   type="button"
                   onClick={() => setPanelOpacity(95)}
-                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                  className="px-2 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
                 >
                   实色 95%
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Quick Presets */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-2">
-              快速赛事规则预设:
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={presetFiba}
-                className="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 hover:border-amber-400 hover:bg-slate-800/80 text-xs font-bold text-amber-300 transition-all text-center"
-              >
-                ★ FIBA 国际标准 (10分+24s)
-              </button>
-              <button
-                type="button"
-                onClick={presetNba}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
-              >
-                NBA / 职业联赛 (12分+24s)
-              </button>
-              <button
-                type="button"
-                onClick={presetYouth}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
-              >
-                校园 / 青年联赛 (8分+24s)
-              </button>
-              <button
-                type="button"
-                onClick={preset3x3}
-                className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80 text-xs font-semibold text-slate-200 transition-all text-center"
-              >
-                三人篮球 3x3 (10分+12s)
-              </button>
             </div>
           </div>
 
@@ -240,7 +390,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               <button
                 type="button"
                 onClick={() => setUseShotClock(!useShotClock)}
-                className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 cursor-pointer ${
                   useShotClock ? 'bg-amber-500' : 'bg-slate-700'
                 }`}
               >
@@ -358,12 +508,12 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
           {/* Time Rules */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
             <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              比赛节次时长
+              比赛节次与计时时长
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  常规单节比赛时长 (分钟)
+                  单节比赛建议时长 (分钟)
                 </label>
                 <input
                   type="number"
@@ -425,6 +575,75 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Sound & Voice Broadcast Rules */}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Volume2 className="w-4 h-4 text-amber-400" />
+              球馆音效与关键时间语音播报
+            </h3>
+
+            {/* Sound Master Switch */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-white/5">
+              <div>
+                <div className="text-xs font-bold text-white">系统音效总开关</div>
+                <div className="text-[11px] text-slate-400">开启球馆终场蜂鸣器、裁判哨音及进球提示音</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 cursor-pointer ${
+                  soundEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                    soundEnabled ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Voice Announcement Switch */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-white/5">
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>每节最后 2 分钟与 1 分钟语音播报</span>
+                  <span className="text-[10px] text-amber-400 font-normal bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                    计时赛专用
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  每节比赛倒计时进行至剩余 2:00 和 1:00 时，自动播报：如“第一节比赛剩余两分钟”、“第一节比赛剩余一分钟”。抢分赛不适用。
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVoiceAnnouncementsEnabled(!voiceAnnouncementsEnabled)}
+                className={`w-12 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 cursor-pointer ${
+                  voiceAnnouncementsEnabled ? 'bg-amber-500' : 'bg-slate-700'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                    voiceAnnouncementsEnabled ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Test Voice Button */}
+            <div className="pt-1 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => speakPeriodTimeRemaining(1, settings.totalRegularPeriods || 4, 2)}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-500/30 transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>试听语音播报效果 (两分钟)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Keyboard Shortcuts Cheat Sheet */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-2">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -465,14 +684,14 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs transition-colors"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs transition-colors cursor-pointer"
           >
             取消
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md shadow-amber-500/20"
+            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md shadow-amber-500/20 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             保存设置

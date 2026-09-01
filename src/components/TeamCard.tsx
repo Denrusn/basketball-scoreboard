@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Flame, 
   User, 
+  Users,
   Shield, 
   Clock, 
   Plus, 
@@ -20,12 +21,19 @@ interface TeamCardProps {
   panelOpacity?: number;
   isLeading?: boolean;
   leadMargin?: number;
+  targetScoreProgress?: {
+    currentPeriodScore: number;
+    targetScore: number;
+  };
   onScore: (teamId: 'home' | 'away', points: number, playerId?: string) => void;
   onFoul: (teamId: 'home' | 'away', delta: number, playerId?: string) => void;
+  onRebound?: (teamId: 'home' | 'away', delta: number, playerId?: string) => void;
+  onAssist?: (teamId: 'home' | 'away', delta: number, playerId?: string) => void;
   onTimeout: (teamId: 'home' | 'away') => void;
   onAddTimeoutBack: (teamId: 'home' | 'away') => void;
   onUpdateTeamName: (teamId: 'home' | 'away', name: string, shortName: string) => void;
   onUpdateTeamColor?: (teamId: 'home' | 'away', color: string, accentColor?: string) => void;
+  onOpenRoster?: () => void;
 }
 
 export const TeamCard: React.FC<TeamCardProps> = ({
@@ -37,12 +45,16 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   panelOpacity = 75,
   isLeading = false,
   leadMargin = 0,
+  targetScoreProgress,
   onScore,
   onFoul,
+  onRebound,
+  onAssist,
   onTimeout,
   onAddTimeoutBack,
   onUpdateTeamName,
   onUpdateTeamColor,
+  onOpenRoster,
 }) => {
   const isHome = side === 'home';
   const isBonus = team.fouls >= foulsForBonus && team.fouls < foulsForDoubleBonus;
@@ -51,6 +63,8 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [teamNameInput, setTeamNameInput] = useState(team.name);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
+
+  const selectedPlayer = team.players.find((p) => p.id === selectedPlayerId);
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +81,18 @@ export const TeamCard: React.FC<TeamCardProps> = ({
 
   const handleQuickFoul = (delta: number) => {
     onFoul(side, delta, selectedPlayerId || undefined);
+  };
+
+  const handleQuickRebound = (delta: number) => {
+    if (onRebound) {
+      onRebound(side, delta, selectedPlayerId || undefined);
+    }
+  };
+
+  const handleQuickAssist = (delta: number) => {
+    if (onAssist) {
+      onAssist(side, delta, selectedPlayerId || undefined);
+    }
   };
 
   const primaryColor = team.color || (isHome ? '#ef4444' : '#3b82f6');
@@ -148,16 +174,38 @@ export const TeamCard: React.FC<TeamCardProps> = ({
       </div>
 
       {/* Main Score Display (Flex container height, tabular digits) */}
-      <div className="flex-1 min-h-0 flex items-center justify-center select-none my-auto py-1 sm:py-2 md:py-3 lg:py-4 shrink-0">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center select-none my-auto py-0.5 sm:py-1 md:py-2 lg:py-3 shrink-0">
         <span
           style={{
             color: primaryColor,
             textShadow: `0 0 45px ${hexToRgba(primaryColor, 0.5)}`,
           }}
-          className="score-fluid-text font-digital font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl 2xl:text-[11rem] tabular-nums leading-none tracking-normal"
+          className="score-fluid-text font-digital font-black text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[12rem] tabular-nums leading-none tracking-normal"
         >
           {String(team.score).padStart(2, '0')}
         </span>
+
+        {/* Target Score Mode - Current Quarter Progress */}
+        {targetScoreProgress ? (
+          <div className="w-full max-w-[200px] sm:max-w-[240px] md:max-w-[280px] mt-1 sm:mt-1.5 px-2">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs font-bold mb-1">
+              <span className="text-slate-400">本节抢分</span>
+              <span style={{ color: primaryColor }} className="tabular-nums font-mono">
+                {targetScoreProgress.currentPeriodScore} / {targetScoreProgress.targetScore} 分
+              </span>
+            </div>
+            <div className="w-full h-1.5 sm:h-2 bg-slate-800/90 rounded-full overflow-hidden border border-white/5">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, (targetScoreProgress.currentPeriodScore / targetScoreProgress.targetScore) * 100)}%`,
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 0 8px ${hexToRgba(primaryColor, 0.6)}`,
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Scoring Action Deck (+1, +2, +3, -1) */}
@@ -231,27 +279,181 @@ export const TeamCard: React.FC<TeamCardProps> = ({
         </button>
       </div>
 
-      {/* Player Assignment (Optional / Compact) */}
-      {team.players.length > 0 && (
-        <div className="h-5 sm:h-6 md:h-8 lg:h-10 mb-1 md:mb-1.5 bg-slate-950/40 px-2 md:px-3 rounded-lg md:rounded-xl border border-white/5 flex items-center justify-between gap-1.5 text-xs md:text-sm lg:text-base shrink-0">
-          <div className="flex items-center gap-1 text-slate-400 shrink-0">
-            <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-slate-400" />
-            <span className="text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold whitespace-nowrap">球员:</span>
-          </div>
-          <select
-            value={selectedPlayerId}
-            onChange={(e) => setSelectedPlayerId(e.target.value)}
-            className="bg-transparent border-0 text-slate-300 text-[8px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base rounded py-0 flex-1 focus:outline-none cursor-pointer truncate"
-          >
-            <option value="" className="bg-slate-900 text-slate-200">全队通用</option>
-            {team.players.map((player) => (
-              <option key={player.id} value={player.id} className="bg-slate-900 text-slate-200">
-                #{player.number} {player.name} ({player.points}分 / {player.fouls}犯)
-              </option>
-            ))}
-          </select>
+      {/* Direct Player Selection Bar (Zero Dropdowns, All Numbers Visible, 1-Click Select) */}
+      <div className="my-1 sm:my-1.5 bg-slate-950/60 p-1 sm:p-1.5 rounded-lg md:rounded-xl border border-white/5 flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-hidden">
+        {/* Label icon */}
+        <div className="hidden xs:flex items-center gap-1 text-slate-400 shrink-0 px-0.5">
+          <Users className="w-3 h-3 md:w-3.5 md:h-3.5 text-slate-400" />
+          <span className="text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap">记分归属:</span>
         </div>
-      )}
+
+        {/* Scrollable list of player badges */}
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+          {/* Team General Button (Default Highlight) */}
+          <button
+            type="button"
+            onClick={() => setSelectedPlayerId('')}
+            title="记入全队总分 (默认)"
+            className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer border ${
+              selectedPlayerId === ''
+                ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md shadow-amber-500/30 font-black ring-1 ring-amber-300/80'
+                : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 hover:text-white border-white/10'
+            }`}
+          >
+            <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+            <span className="whitespace-nowrap">全队通用</span>
+          </button>
+
+          {/* Individual Player Number Badges */}
+          {team.players.map((player) => {
+            const isSelected = selectedPlayerId === player.id;
+            return (
+              <button
+                key={player.id}
+                type="button"
+                onClick={() => setSelectedPlayerId(isSelected ? '' : player.id)}
+                title={`${player.name || `球员 #${player.number}`} (得分 ${player.points} | 篮板 ${player.rebounds || 0} | 助攻 ${player.assists || 0} | 犯规 ${player.fouls})`}
+                style={
+                  isSelected
+                    ? {
+                        backgroundColor: primaryColor,
+                        color: '#020617',
+                        boxShadow: `0 0 12px ${hexToRgba(primaryColor, 0.7)}`,
+                        borderColor: '#ffffff',
+                      }
+                    : undefined
+                }
+                className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer border ${
+                  isSelected
+                    ? 'font-black ring-1 ring-white/80'
+                    : 'bg-slate-900/90 text-slate-200 hover:bg-slate-800 border-white/10 hover:border-white/20'
+                }`}
+              >
+                <span className="font-digital text-[11px] sm:text-xs font-black">
+                  #{player.number}
+                </span>
+                {player.name && (
+                  <span className="hidden md:inline text-[10px] truncate max-w-[50px] opacity-90">
+                    {player.name}
+                  </span>
+                )}
+                <span
+                  className={`text-[9px] sm:text-[10px] font-digital tabular-nums px-1 py-0.2 rounded ${
+                    isSelected
+                      ? 'bg-slate-950/25 text-slate-950 font-black'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {player.points}分
+                </span>
+                {(player.rebounds > 0 || player.assists > 0) && (
+                  <span
+                    className={`hidden lg:inline text-[8px] font-digital tabular-nums px-1 py-0.2 rounded ${
+                      isSelected
+                        ? 'bg-slate-950/20 text-slate-950'
+                        : 'bg-slate-800/80 text-amber-300/80'
+                    }`}
+                  >
+                    {player.rebounds || 0}板/{player.assists || 0}助
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Quick Roster Modal trigger if provided */}
+          {onOpenRoster && (
+            <button
+              type="button"
+              onClick={onOpenRoster}
+              title="添加或管理球员名单"
+              className="px-1.5 sm:px-2 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-dashed border-white/15 transition-colors shrink-0 flex items-center gap-0.5 cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span>名单</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Rebounds & Assists Stats Action Deck */}
+      <div className="grid grid-cols-2 gap-1 sm:gap-2 md:gap-3 lg:gap-4 my-1 sm:my-1.5 shrink-0">
+        {/* Rebounds (篮板) Box */}
+        <div className="h-7 sm:h-9 md:h-11 lg:h-14 xl:h-16 flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl px-1.5 sm:px-2.5 md:px-3.5 lg:px-4.5 border border-white/5">
+          <div className="min-w-0 pr-1 flex-1">
+            <div className="flex items-center gap-1 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-bold text-slate-400 truncate">
+              <Shield className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-amber-400" />
+              <span className="truncate">篮板</span>
+              {selectedPlayer && (
+                <span className="text-[7px] md:text-[9px] lg:text-[10px] text-amber-300 font-bold bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20 truncate">
+                  #{selectedPlayer.number}:{selectedPlayer.rebounds || 0}
+                </span>
+              )}
+            </div>
+            <div className="font-digital text-xs sm:text-base md:text-xl lg:text-2xl xl:text-3xl font-black text-amber-300 leading-none mt-0.5 tabular-nums">
+              {team.rebounds || 0}
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleQuickRebound(-1)}
+              disabled={(team.rebounds || 0) <= 0}
+              className="w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 lg:w-9 lg:h-9 rounded md:rounded-lg lg:rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 transition-colors text-xs md:text-sm shrink-0 cursor-pointer"
+              title={selectedPlayer ? `为 #${selectedPlayer.number} 扣减1个篮板` : '扣减全队1个篮板'}
+            >
+              <Minus className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3.5 md:h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickRebound(1)}
+              className="px-1 md:px-2 lg:px-3 h-4 sm:h-5 md:h-7 lg:h-9 rounded md:rounded-lg lg:rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[8px] sm:text-[9px] md:text-xs lg:text-sm xl:text-base font-bold transition-colors flex items-center gap-0.5 md:gap-1 shrink-0 whitespace-nowrap cursor-pointer active:scale-95"
+              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name} 记1个篮板` : '记全队1个篮板'}
+            >
+              <Plus className="w-2 h-2 md:w-3 md:h-3" />
+              <span>+板</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Assists (助攻) Box */}
+        <div className="h-7 sm:h-9 md:h-11 lg:h-14 xl:h-16 flex items-center justify-between bg-slate-950/50 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl px-1.5 sm:px-2.5 md:px-3.5 lg:px-4.5 border border-white/5">
+          <div className="min-w-0 pr-1 flex-1">
+            <div className="flex items-center gap-1 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-bold text-slate-400 truncate">
+              <Flame className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3.5 md:h-3.5 shrink-0 text-cyan-400" />
+              <span className="truncate">助攻</span>
+              {selectedPlayer && (
+                <span className="text-[7px] md:text-[9px] lg:text-[10px] text-cyan-300 font-bold bg-cyan-500/10 px-1 py-0.2 rounded border border-cyan-500/20 truncate">
+                  #{selectedPlayer.number}:{selectedPlayer.assists || 0}
+                </span>
+              )}
+            </div>
+            <div className="font-digital text-xs sm:text-base md:text-xl lg:text-2xl xl:text-3xl font-black text-cyan-300 leading-none mt-0.5 tabular-nums">
+              {team.assists || 0}
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleQuickAssist(-1)}
+              disabled={(team.assists || 0) <= 0}
+              className="w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 lg:w-9 lg:h-9 rounded md:rounded-lg lg:rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-20 flex items-center justify-center text-slate-300 transition-colors text-xs md:text-sm shrink-0 cursor-pointer"
+              title={selectedPlayer ? `为 #${selectedPlayer.number} 扣减1次助攻` : '扣减全队1次助攻'}
+            >
+              <Minus className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3.5 md:h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickAssist(1)}
+              className="px-1 md:px-2 lg:px-3 h-4 sm:h-5 md:h-7 lg:h-9 rounded md:rounded-lg lg:rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[8px] sm:text-[9px] md:text-xs lg:text-sm xl:text-base font-bold transition-colors flex items-center gap-0.5 md:gap-1 shrink-0 whitespace-nowrap cursor-pointer active:scale-95"
+              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name} 记1次助攻` : '记全队1次助攻'}
+            >
+              <Plus className="w-2 h-2 md:w-3 md:h-3" />
+              <span>+助</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Bottom Fouls & Timeouts Row */}
       <div className="grid grid-cols-2 gap-1 sm:gap-2 md:gap-3 lg:gap-4 pt-1 sm:pt-1.5 md:pt-2 lg:pt-3 border-t border-white/10 shrink-0">

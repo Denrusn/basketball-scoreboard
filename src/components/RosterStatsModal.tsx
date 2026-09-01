@@ -7,11 +7,13 @@ interface RosterStatsModalProps {
   onClose: () => void;
   homeTeam: Team;
   awayTeam: Team;
-  onAddPlayer: (teamId: 'home' | 'away', player: Omit<Player, 'id' | 'points' | 'fouls' | 'twoPointers' | 'threePointers' | 'freeThrows'>) => void;
+  onAddPlayer: (teamId: 'home' | 'away', player: Omit<Player, 'id' | 'points' | 'fouls' | 'twoPointers' | 'threePointers' | 'freeThrows' | 'rebounds' | 'assists'>) => void;
   onRemovePlayer: (teamId: 'home' | 'away', playerId: string) => void;
   onTogglePlayerCourt: (teamId: 'home' | 'away', playerId: string) => void;
   onScorePlayer: (teamId: 'home' | 'away', points: number, playerId: string) => void;
   onFoulPlayer: (teamId: 'home' | 'away', playerId: string) => void;
+  onReboundPlayer?: (teamId: 'home' | 'away', playerId: string) => void;
+  onAssistPlayer?: (teamId: 'home' | 'away', playerId: string) => void;
 }
 
 export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
@@ -24,6 +26,8 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
   onTogglePlayerCourt,
   onScorePlayer,
   onFoulPlayer,
+  onReboundPlayer,
+  onAssistPlayer,
 }) => {
   const [activeTab, setActiveTab] = useState<'home' | 'away'>('home');
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
@@ -143,8 +147,10 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
                   <th className="py-3 px-2 text-center">2分</th>
                   <th className="py-3 px-2 text-center">3分</th>
                   <th className="py-3 px-2 text-center">罚球</th>
-                  <th className="py-3 px-3 text-center">总得分</th>
-                  <th className="py-3 px-3 text-center">个人犯规</th>
+                  <th className="py-3 px-2.5 text-center">总得分</th>
+                  <th className="py-3 px-2 text-center text-amber-400 font-bold">篮板</th>
+                  <th className="py-3 px-2 text-center text-cyan-400 font-bold">助攻</th>
+                  <th className="py-3 px-2.5 text-center">犯规</th>
                   <th className="py-3 px-3 text-center">快速技术操作</th>
                   <th className="py-3 px-2 text-center">操作</th>
                 </tr>
@@ -152,7 +158,7 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
               <tbody className="divide-y divide-slate-800/60 font-digital">
                 {currentTeam.players.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-slate-500 font-sans">
+                    <td colSpan={12} className="py-8 text-center text-slate-500 font-sans">
                       暂无球员，请在上方添加球员名单
                     </td>
                   </tr>
@@ -193,10 +199,16 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
                         <td className="py-3 px-2 text-center text-slate-300">
                           {player.freeThrows}
                         </td>
-                        <td className="py-3 px-3 text-center font-black text-sm text-amber-300">
+                        <td className="py-3 px-2.5 text-center font-black text-sm text-amber-300">
                           {player.points}
                         </td>
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-3 px-2 text-center font-black text-sm text-amber-400">
+                          {player.rebounds || 0}
+                        </td>
+                        <td className="py-3 px-2 text-center font-black text-sm text-cyan-400">
+                          {player.assists || 0}
+                        </td>
+                        <td className="py-3 px-2.5 text-center">
                           <span
                             className={`font-black px-1.5 py-0.5 rounded ${
                               isFouledOut
@@ -207,46 +219,64 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
                             }`}
                           >
                             {player.fouls}
-                            {isFouledOut && ' (满犯离场)'}
+                            {isFouledOut && ' (满犯)'}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-center font-sans">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
                             <button
                               onClick={() => onScorePlayer(activeTab, 1, player.id)}
-                              className="px-1.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700"
+                              className="px-1.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 cursor-pointer"
                               title="罚球+1分"
                             >
                               +1
                             </button>
                             <button
                               onClick={() => onScorePlayer(activeTab, 2, player.id)}
-                              className="px-1.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-bold border border-amber-500/30"
+                              className="px-1.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-bold border border-amber-500/30 cursor-pointer"
                               title="进球+2分"
                             >
                               +2
                             </button>
                             <button
                               onClick={() => onScorePlayer(activeTab, 3, player.id)}
-                              className="px-1.5 py-1 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-[11px] font-bold border border-orange-500/30 flex items-center gap-0.5"
+                              className="px-1.5 py-1 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-[11px] font-bold border border-orange-500/30 flex items-center gap-0.5 cursor-pointer"
                               title="三分+3分"
                             >
                               +3
                               <Flame className="w-2.5 h-2.5" />
                             </button>
+                            {onReboundPlayer && (
+                              <button
+                                onClick={() => onReboundPlayer(activeTab, player.id)}
+                                className="px-1.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-bold border border-amber-500/30 cursor-pointer"
+                                title="记录篮板+1"
+                              >
+                                +板
+                              </button>
+                            )}
+                            {onAssistPlayer && (
+                              <button
+                                onClick={() => onAssistPlayer(activeTab, player.id)}
+                                className="px-1.5 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 cursor-pointer"
+                                title="记录助攻+1"
+                              >
+                                +助
+                              </button>
+                            )}
                             <button
                               onClick={() => onFoulPlayer(activeTab, player.id)}
-                              className="px-1.5 py-1 rounded bg-rose-950/70 hover:bg-rose-900 text-rose-300 text-[11px] font-bold border border-rose-800/80"
+                              className="px-1.5 py-1 rounded bg-rose-950/70 hover:bg-rose-900 text-rose-300 text-[11px] font-bold border border-rose-800/80 cursor-pointer"
                               title="记录犯规+1"
                             >
-                              +犯规
+                              +犯
                             </button>
                           </div>
                         </td>
                         <td className="py-3 px-2 text-center font-sans">
                           <button
                             onClick={() => onRemovePlayer(activeTab, player.id)}
-                            className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                            className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
                             title="删除球员"
                           >
                             <Trash2 className="w-4 h-4" />

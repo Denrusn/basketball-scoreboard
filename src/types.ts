@@ -4,6 +4,8 @@ export interface Player {
   name: string;
   points: number;
   fouls: number;
+  rebounds: number;
+  assists: number;
   isOnCourt: boolean;
   twoPointers: number;
   threePointers: number;
@@ -18,6 +20,8 @@ export interface Team {
   accentColor: string;
   score: number;
   fouls: number;
+  rebounds: number;
+  assists: number;
   timeoutsLeft: number;
   quarterScores: number[];
   players: Player[];
@@ -25,7 +29,11 @@ export interface Team {
 
 export type GameStatus = 'ready' | 'live' | 'paused' | 'period_break' | 'final';
 
+export type MatchMode = 'time' | 'target_score';
+
 export interface GameSettings {
+  matchMode: MatchMode; // 'time' or 'target_score'
+  targetScorePerPeriod: number; // target points for a single period (e.g. 20, 25, 30 or custom, default 30)
   periodMinutes: number;
   overtimeMinutes: number;
   totalRegularPeriods: number;
@@ -36,6 +44,7 @@ export interface GameSettings {
   foulsForDoubleBonus: number;
   maxTimeouts: number;
   soundEnabled: boolean;
+  voiceAnnouncementsEnabled?: boolean; // 关键节点语音播报 (每节最后2分钟和1分钟)
   panelOpacity: number; // 0 to 100 percentage
 }
 
@@ -45,7 +54,7 @@ export interface GameEvent {
   period: number;
   gameClockDisplay: string;
   teamId?: 'home' | 'away';
-  type: 'score' | 'foul' | 'timeout' | 'period_start' | 'period_end' | 'substitution' | 'edit';
+  type: 'score' | 'foul' | 'timeout' | 'period_start' | 'period_end' | 'substitution' | 'edit' | 'rebound' | 'assist' | 'time_announcement';
   points?: number;
   playerName?: string;
   playerNumber?: number;
@@ -57,10 +66,16 @@ export interface GameEvent {
     awayScore: number;
     homeFouls: number;
     awayFouls: number;
+    homeRebounds?: number;
+    awayRebounds?: number;
+    homeAssists?: number;
+    awayAssists?: number;
     homeTimeouts: number;
     awayTimeouts: number;
     homeQuarterScores: number[];
     awayQuarterScores: number[];
+    homePlayers?: Player[];
+    awayPlayers?: Player[];
     period: number;
     gameClockTenths: number;
     shotClockTenths: number;
