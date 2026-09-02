@@ -579,7 +579,17 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                       </div>
 
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs font-digital border-collapse">
+                        <table className="w-full text-xs font-digital border-collapse table-fixed">
+                          <colgroup>
+                            <col className="w-[16%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[12%]" />
+                            <col className="w-[12%]" />
+                            <col className="w-[13%]" />
+                          </colgroup>
                           <thead>
                             <tr className="text-slate-400 border-b border-white/10 text-[10px] sm:text-[11px] font-sans">
                               <th className="py-1.5 px-1.5 text-left font-semibold">球员</th>
@@ -608,7 +618,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                                   }`}
                                 >
                                   <td className="py-1.5 px-1.5 text-left font-sans">
-                                    <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+                                    <div className="flex items-center gap-1 min-w-0">
                                       <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-300 font-digital font-bold text-[10px] flex items-center justify-center shrink-0 border border-amber-500/30">
                                         #{p.number}
                                       </span>
@@ -698,7 +708,17 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                       </div>
 
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs font-digital border-collapse">
+                        <table className="w-full text-xs font-digital border-collapse table-fixed">
+                          <colgroup>
+                            <col className="w-[16%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[11%]" />
+                            <col className="w-[12%]" />
+                            <col className="w-[12%]" />
+                            <col className="w-[13%]" />
+                          </colgroup>
                           <thead>
                             <tr className="text-slate-400 border-b border-white/10 text-[10px] sm:text-[11px] font-sans">
                               <th className="py-1.5 px-1.5 text-left font-semibold">球员</th>
@@ -727,7 +747,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                                   }`}
                                 >
                                   <td className="py-1.5 px-1.5 text-left font-sans">
-                                    <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+                                    <div className="flex items-center gap-1 min-w-0">
                                       <span className="w-5 h-5 rounded-md bg-cyan-500/20 text-cyan-300 font-digital font-bold text-[10px] flex items-center justify-center shrink-0 border border-cyan-500/30">
                                         #{p.number}
                                       </span>
