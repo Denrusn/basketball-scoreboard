@@ -22,6 +22,8 @@ import {
   Flame,
   Shield,
   Zap,
+  Share2,
+  Eye,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Team, GameSettings, GameEvent, Player } from '../types';
@@ -31,7 +33,9 @@ import {
   exportPlayByPlayCSV,
   exportPlayByPlayText,
   exportGameDataJSON,
+  universalSaveFile,
 } from '../utils/exportUtils';
+import { isCapacitorNative } from '../utils/capacitorUtils';
 
 interface GameSummaryModalProps {
   isOpen: boolean;
@@ -61,6 +65,8 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
   const [isExportingImage, setIsExportingImage] = useState(false);
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
+  const [previewImageDataUrl, setPreviewImageDataUrl] = useState<string | null>(null);
+  const [previewImageFilename, setPreviewImageFilename] = useState<string>('');
 
   const summaryPosterRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
@@ -151,7 +157,22 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    // In native mobile app or container without window.print support
+    if (isCapacitorNative()) {
+      handleCopyReport();
+      setExportSuccessMsg('已自动复制完整战报！App端建议点击「导出总结图片」生成长图分享或打印。');
+      setTimeout(() => setExportSuccessMsg(null), 4500);
+      return;
+    }
+
+    try {
+      window.print();
+    } catch (e) {
+      console.warn('window.print failed, falling back to copy:', e);
+      handleCopyReport();
+      setExportSuccessMsg('已复制战报内容至剪贴板，可随时粘贴打印');
+      setTimeout(() => setExportSuccessMsg(null), 3000);
+    }
   };
 
   // Export summary poster as high-res PNG
@@ -161,37 +182,73 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
     setIsExportDropdownOpen(false);
 
     const filename = `篮球比赛战报_${homeTeam.shortName || homeTeam.name}_vs_${awayTeam.shortName || awayTeam.name}_${new Date().toISOString().slice(0, 10)}.png`;
-    const success = await exportElementAsPNG(summaryPosterRef.current, filename);
+    const result = await exportElementAsPNG(summaryPosterRef.current, filename);
     setIsExportingImage(false);
 
-    if (success) {
-      setExportSuccessMsg('战报图片已成功生成并下载！');
+    if (result.success && result.dataUrl) {
+      setPreviewImageDataUrl(result.dataUrl);
+      setPreviewImageFilename(filename);
+
+      if (result.method === 'capacitor_share') {
+        setExportSuccessMsg('已调起系统分享/保存菜单！也可在预览中长按图片保存');
+      } else if (result.method === 'web_share') {
+        setExportSuccessMsg('已调起系统分享！');
+      } else {
+        setExportSuccessMsg('战报长图已生成！');
+      }
+      setTimeout(() => setExportSuccessMsg(null), 4000);
+    } else if (!result.success) {
+      setExportSuccessMsg('生成战报图片失败，请重试');
       setTimeout(() => setExportSuccessMsg(null), 3000);
     }
   };
 
   // Export Play-by-Play CSV
-  const handleExportCSV = () => {
-    exportPlayByPlayCSV(events, homeTeam, awayTeam, period, totalRegularPeriods);
+  const handleExportCSV = async () => {
     setIsExportDropdownOpen(false);
-    setExportSuccessMsg('详细比赛流水表格 (.csv) 已导出！');
-    setTimeout(() => setExportSuccessMsg(null), 3000);
+    const res = await exportPlayByPlayCSV(events, homeTeam, awayTeam, period, totalRegularPeriods);
+    if (res.success) {
+      if (res.method === 'capacitor_share' || res.method === 'web_share') {
+        setExportSuccessMsg('已调起系统保存/分享 Excel (CSV) 表格！');
+      } else {
+        setExportSuccessMsg('详细比赛流水表格 (.csv) 已导出！');
+      }
+    } else {
+      setExportSuccessMsg('导出 CSV 失败，请重试');
+    }
+    setTimeout(() => setExportSuccessMsg(null), 3500);
   };
 
   // Export Play-by-Play Text
-  const handleExportText = () => {
-    exportPlayByPlayText(events, homeTeam, awayTeam, period, totalRegularPeriods);
+  const handleExportText = async () => {
     setIsExportDropdownOpen(false);
-    setExportSuccessMsg('详细比赛进程文本 (.txt) 已导出！');
-    setTimeout(() => setExportSuccessMsg(null), 3000);
+    const res = await exportPlayByPlayText(events, homeTeam, awayTeam, period, totalRegularPeriods);
+    if (res.success) {
+      if (res.method === 'capacitor_share' || res.method === 'web_share') {
+        setExportSuccessMsg('已调起系统保存/分享 文本战报！');
+      } else {
+        setExportSuccessMsg('详细比赛进程文本 (.txt) 已导出！');
+      }
+    } else {
+      setExportSuccessMsg('导出文本战报失败，请重试');
+    }
+    setTimeout(() => setExportSuccessMsg(null), 3500);
   };
 
   // Export JSON Data
-  const handleExportJSON = () => {
-    exportGameDataJSON(events, homeTeam, awayTeam, period, settings);
+  const handleExportJSON = async () => {
     setIsExportDropdownOpen(false);
-    setExportSuccessMsg('比赛完整结构化数据 (.json) 已导出！');
-    setTimeout(() => setExportSuccessMsg(null), 3000);
+    const res = await exportGameDataJSON(events, homeTeam, awayTeam, period, settings);
+    if (res.success) {
+      if (res.method === 'capacitor_share' || res.method === 'web_share') {
+        setExportSuccessMsg('已调起系统保存/分享 结构化数据！');
+      } else {
+        setExportSuccessMsg('比赛完整结构化数据 (.json) 已导出！');
+      }
+    } else {
+      setExportSuccessMsg('导出 JSON 失败，请重试');
+    }
+    setTimeout(() => setExportSuccessMsg(null), 3500);
   };
 
   return (
@@ -1060,6 +1117,96 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* High-Res Image Poster Preview & Native Save Modal */}
+      {previewImageDataUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+            {/* Header */}
+            <div className="p-3 sm:p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-white">比赛战报长图海报</h3>
+                  <p className="text-[10px] text-slate-400">已成功生成高清战报图片</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewImageDataUrl(null)}
+                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Image Viewer with Scroll & Touch Tip */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 bg-slate-950 flex flex-col items-center">
+              <div className="w-full rounded-xl overflow-hidden border border-slate-800 shadow-xl bg-slate-900 mb-3">
+                <img
+                  src={previewImageDataUrl}
+                  alt="比赛战报长图"
+                  className="w-full h-auto object-contain select-none"
+                  style={{ WebkitTouchCallout: 'default' }}
+                />
+              </div>
+
+              <div className="w-full p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200/90 leading-relaxed text-center">
+                💡 <strong>移动端 / App 提示：</strong>可<strong>直接长按上方图片</strong>选择「保存到相册」或「发送给微信/QQ好友」。
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-3 sm:p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (previewImageDataUrl) {
+                      await universalSaveFile(
+                        previewImageFilename || '战报海报.png',
+                        previewImageDataUrl,
+                        'image/png',
+                        '篮球比赛战报海报'
+                      );
+                      setExportSuccessMsg('已调用系统分享/保存！');
+                      setTimeout(() => setExportSuccessMsg(null), 3000);
+                    }
+                  }}
+                  className="px-3 py-1.5 sm:py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>系统分享 / 保存</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (previewImageDataUrl) {
+                      const link = document.createElement('a');
+                      link.download = previewImageFilename || '战报海报.png';
+                      link.href = previewImageDataUrl;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  className="px-3 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>直接下载</span>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setPreviewImageDataUrl(null)}
+                className="px-4 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                完成
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

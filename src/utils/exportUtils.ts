@@ -1,31 +1,137 @@
 import { toPng } from 'html-to-image';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { GameEvent, Team, GameSettings } from '../types';
+import { isCapacitorNative } from './capacitorUtils';
+
+export interface ExportResult {
+  success: boolean;
+  method: 'capacitor_share' | 'web_share' | 'browser_download' | 'preview_fallback';
+  dataUrl?: string;
+  error?: string;
+}
+
+/**
+ * Converts a base64 Data URL to a Blob
+ */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Universal file saver/exporter supporting Desktop Web, Mobile Browser WebShare, and Native App (Capacitor)
+ */
+export async function universalSaveFile(
+  filename: string,
+  content: string | Blob,
+  mimeType: string,
+  title = '导出比赛数据'
+): Promise<ExportResult> {
+  // 1. Native Capacitor Environment (Android / iOS)
+  if (isCapacitorNative()) {
+    try {
+      let writeData: string;
+      let isBase64 = false;
+
+      if (content instanceof Blob) {
+        // Convert Blob to Base64 string for Capacitor Filesystem
+        writeData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const res = reader.result as string;
+            const base64 = res.split(',')[1] || '';
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(content);
+        });
+        isBase64 = true;
+      } else {
+        writeData = content;
+      }
+
+      const fileResult = await Filesystem.writeFile({
+        path: filename,
+        data: writeData,
+        directory: Directory.Cache,
+        encoding: isBase64 ? undefined : Encoding.UTF8,
+      });
+
+      // Invoke Native System Share dialog to save to files, send to WeChat/QQ, drive, etc.
+      await Share.share({
+        title,
+        text: `${title} - ${filename}`,
+        files: [fileResult.uri],
+        dialogTitle: `分享或保存文件：${filename}`,
+      });
+
+      return { success: true, method: 'capacitor_share' };
+    } catch (err: any) {
+      console.warn('Native Capacitor export error, falling back to web methods:', err);
+    }
+  }
+
+  // 2. Mobile Browser Web Share API (if supported for files)
+  try {
+    const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
+    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+      const file = new File([blob], filename, { type: mimeType });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title,
+        });
+        return { success: true, method: 'web_share' };
+      }
+    }
+  } catch (shareErr) {
+    // User cancelled share or share failed; proceed to normal download
+    console.warn('Web Share API aborted or failed:', shareErr);
+  }
+
+  // 3. Desktop / Standard Browser Blob Download
+  try {
+    const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return { success: true, method: 'browser_download' };
+  } catch (err: any) {
+    console.error('Browser download failed:', err);
+    return { success: false, method: 'browser_download', error: err?.message || '下载失败' };
+  }
+}
 
 /**
  * Downloads a string payload as a local file with the specified MIME type
  */
 export function downloadFile(filename: string, content: string, mimeType = 'text/plain;charset=utf-8') {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  return universalSaveFile(filename, content, mimeType);
 }
 
 /**
  * Exports match play-by-play events as CSV (Excel compatible with UTF-8 BOM)
  */
-export function exportPlayByPlayCSV(
+export async function exportPlayByPlayCSV(
   events: GameEvent[],
   homeTeam: Team,
   awayTeam: Team,
   period: number,
   totalRegularPeriods: number
-) {
+): Promise<ExportResult> {
   const chronological = [...events].reverse();
   const BOM = '\uFEFF'; // Excel UTF-8 Byte Order Mark
 
@@ -78,19 +184,19 @@ export function exportPlayByPlayCSV(
 
   const csvContent = BOM + [headers.join(','), ...rows].join('\r\n');
   const filename = `篮球比赛进程流水_${homeTeam.shortName || homeTeam.name}_vs_${awayTeam.shortName || awayTeam.name}_${new Date().toISOString().slice(0, 10)}.csv`;
-  downloadFile(filename, csvContent, 'text/csv;charset=utf-8');
+  return universalSaveFile(filename, csvContent, 'text/csv;charset=utf-8', '比赛技术流水CSV');
 }
 
 /**
  * Exports match play-by-play events as formatted Text / Markdown
  */
-export function exportPlayByPlayText(
+export async function exportPlayByPlayText(
   events: GameEvent[],
   homeTeam: Team,
   awayTeam: Team,
   period: number,
   totalRegularPeriods: number
-) {
+): Promise<ExportResult> {
   const chronological = [...events].reverse();
   const dateStr = new Date().toLocaleString();
 
@@ -129,19 +235,19 @@ export function exportPlayByPlayText(
 
   lines.push(`═══════════════════════════════════════════════════`);
   const filename = `比赛详细进程_${homeTeam.shortName || homeTeam.name}_vs_${awayTeam.shortName || awayTeam.name}.txt`;
-  downloadFile(filename, lines.join('\n'), 'text/plain;charset=utf-8');
+  return universalSaveFile(filename, lines.join('\n'), 'text/plain;charset=utf-8', '比赛详细进程战报');
 }
 
 /**
  * Exports complete game state as structured JSON
  */
-export function exportGameDataJSON(
+export async function exportGameDataJSON(
   events: GameEvent[],
   homeTeam: Team,
   awayTeam: Team,
   period: number,
   settings: GameSettings
-) {
+): Promise<ExportResult> {
   const data = {
     exportDate: new Date().toISOString(),
     match: {
@@ -158,17 +264,21 @@ export function exportGameDataJSON(
   };
 
   const filename = `比赛完整数据_${homeTeam.shortName || homeTeam.name}_vs_${awayTeam.shortName || awayTeam.name}.json`;
-  downloadFile(filename, JSON.stringify(data, null, 2), 'application/json;charset=utf-8');
+  return universalSaveFile(filename, JSON.stringify(data, null, 2), 'application/json;charset=utf-8', '比赛完整JSON数据');
 }
 
 /**
- * Captures a specific DOM node and downloads as high-resolution PNG image
+ * Captures a specific DOM node and exports as high-resolution PNG image
  */
-export async function exportElementAsPNG(element: HTMLElement, filename: string): Promise<boolean> {
+export async function exportElementAsPNG(
+  element: HTMLElement,
+  filename: string
+): Promise<ExportResult> {
+  const cleanFilename = filename.endsWith('.png') ? filename : `${filename}.png`;
   try {
     const dataUrl = await toPng(element, {
       cacheBust: true,
-      pixelRatio: 2.5, // Crisp retina quality
+      pixelRatio: 2, // High clarity, well balanced for mobile memory
       quality: 0.98,
       backgroundColor: '#090d16',
       style: {
@@ -176,15 +286,62 @@ export async function exportElementAsPNG(element: HTMLElement, filename: string)
       },
     });
 
-    const link = document.createElement('a');
-    link.download = filename.endsWith('.png') ? filename : `${filename}.png`;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    return true;
-  } catch (err) {
+    const blob = dataUrlToBlob(dataUrl);
+
+    // 1. Native Capacitor Environment
+    if (isCapacitorNative()) {
+      try {
+        const base64Data = dataUrl.split(',')[1] || '';
+        const fileResult = await Filesystem.writeFile({
+          path: cleanFilename,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+
+        await Share.share({
+          title: '比赛战报海报',
+          text: `篮球比赛战报海报 - ${cleanFilename}`,
+          files: [fileResult.uri],
+          dialogTitle: '保存或分享战报图片',
+        });
+
+        return { success: true, method: 'capacitor_share', dataUrl };
+      } catch (nativeErr) {
+        console.warn('Native Capacitor share failed, falling back:', nativeErr);
+      }
+    }
+
+    // 2. Mobile Browser Web Share API
+    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+      try {
+        const file = new File([blob], cleanFilename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: '篮球比赛战报海报',
+          });
+          return { success: true, method: 'web_share', dataUrl };
+        }
+      } catch (shareErr) {
+        console.warn('Web Share failed or cancelled:', shareErr);
+      }
+    }
+
+    // 3. Desktop / Standard Web Download
+    try {
+      const link = document.createElement('a');
+      link.download = cleanFilename;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return { success: true, method: 'browser_download', dataUrl };
+    } catch (downloadErr) {
+      console.warn('Standard link download failed:', downloadErr);
+      return { success: true, method: 'preview_fallback', dataUrl };
+    }
+  } catch (err: any) {
     console.error('Failed to export element as PNG image', err);
-    return false;
+    return { success: false, method: 'preview_fallback', error: err?.message || '生成图片失败' };
   }
 }
