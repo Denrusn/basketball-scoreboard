@@ -1,18 +1,23 @@
 import React from 'react';
-import { Trophy, Play, FastForward, FileText, Settings, Sparkles, CheckCircle2 } from 'lucide-react';
-import { Team, GameSettings } from '../types';
+import { Trophy, Play, FastForward, FileText, Settings, Sparkles } from 'lucide-react';
+import { Team, GameSettings, MatchMode } from '../types';
 
 interface PeriodEndModalProps {
   isOpen: boolean;
   endedPeriod: number;
   homeTeam: Team;
   awayTeam: Team;
-  settings: GameSettings;
+  settings?: GameSettings;
+  totalRegularPeriods?: number;
+  matchMode?: MatchMode;
+  targetScorePerPeriod?: number;
   winnerTeamName?: string;
-  onStartNextPeriod: () => void;
-  onCloseLater: () => void;
+  isTargetScoreReached?: boolean;
+  onStartNextPeriod: (nextPeriod?: number) => void;
+  onCloseLater?: () => void;
+  onClose?: () => void;
   onOpenSummary: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
@@ -21,22 +26,40 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
   homeTeam,
   awayTeam,
   settings,
+  totalRegularPeriods: propTotalPeriods,
+  matchMode: propMatchMode,
+  targetScorePerPeriod: propTargetScore,
   winnerTeamName,
   onStartNextPeriod,
   onCloseLater,
+  onClose,
   onOpenSummary,
   onOpenSettings,
 }) => {
   if (!isOpen) return null;
 
-  const isFinalPeriod = endedPeriod >= settings.totalRegularPeriods && homeTeam.score !== awayTeam.score;
-  const isOvertimeNeeded = endedPeriod >= settings.totalRegularPeriods && homeTeam.score === awayTeam.score;
+  const handleClose = () => {
+    if (onCloseLater) onCloseLater();
+    else if (onClose) onClose();
+  };
+
+  const totalRegularPeriods = settings?.totalRegularPeriods ?? propTotalPeriods ?? 4;
+  const matchMode = settings?.matchMode ?? propMatchMode ?? 'time';
+  const targetScorePerPeriod = settings?.targetScorePerPeriod ?? propTargetScore ?? 30;
+
+  const isTargetScoreMode = matchMode === 'target_score';
+  const currentPeriodTarget = endedPeriod * targetScorePerPeriod;
+  const nextPeriodTarget = (endedPeriod + 1) * targetScorePerPeriod;
+
+  const isFinalPeriod = isTargetScoreMode
+    ? endedPeriod >= totalRegularPeriods
+    : endedPeriod >= totalRegularPeriods && homeTeam.score !== awayTeam.score;
+  const isOvertimeNeeded = !isTargetScoreMode && endedPeriod >= totalRegularPeriods && homeTeam.score === awayTeam.score;
   const nextPeriod = endedPeriod + 1;
-  const isTargetScoreMode = settings.matchMode === 'target_score';
 
   const periodIndex = endedPeriod - 1;
-  const homePeriodScore = homeTeam.quarterScores[periodIndex] || 0;
-  const awayPeriodScore = awayTeam.quarterScores[periodIndex] || 0;
+  const homePeriodScore = homeTeam.quarterScores ? (homeTeam.quarterScores[periodIndex] || 0) : 0;
+  const awayPeriodScore = awayTeam.quarterScores ? (awayTeam.quarterScores[periodIndex] || 0) : 0;
 
   const isHomeLeadingOverall = homeTeam.score > awayTeam.score;
   const isAwayLeadingOverall = awayTeam.score > homeTeam.score;
@@ -52,14 +75,14 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5">
             <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-            <span>{isTargetScoreMode ? '🎯 目标得分达成' : '⏱ 节次时间已到'}</span>
+            <span>{isTargetScoreMode ? `🎯 达成第 ${endedPeriod} 节抢分目标 (${currentPeriodTarget}分)` : '⏱ 节次时间已到'}</span>
           </div>
           <h2 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-tight flex items-center justify-center gap-2">
             <span>第 {endedPeriod} 节比赛结束</span>
           </h2>
           {isTargetScoreMode && winnerTeamName && (
             <p className="text-[11px] sm:text-xs text-emerald-400 font-semibold mt-0.5">
-              🎉 <strong className="text-white underline">{winnerTeamName}</strong> 率先斩获本节 {settings.targetScorePerPeriod} 分目标！
+              🎉 <strong className="text-white underline">{winnerTeamName}</strong> 率先突破本节 <strong className="text-amber-300 font-digital">{currentPeriodTarget}</strong> 分目标！
             </p>
           )}
         </div>
@@ -124,14 +147,14 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
               模式:{' '}
               <strong className="text-slate-200">
                 {isTargetScoreMode
-                  ? `抢分目标 (${settings.targetScorePerPeriod}分/节)`
-                  : `常规计时 (${settings.periodMinutes}分/节)`}
+                  ? `单节抢分 (${targetScorePerPeriod}分/节)`
+                  : `常规计时 (${settings?.periodMinutes ?? 10}分/节)`}
               </strong>
             </span>
             <span className="shrink-0">
               进度:{' '}
               <strong className="text-amber-400 font-digital">
-                {endedPeriod} / {settings.totalRegularPeriods} 节
+                {endedPeriod} / {totalRegularPeriods} 节
               </strong>
             </span>
           </div>
@@ -141,7 +164,7 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
             {isOvertimeNeeded ? (
               <button
                 id="btn-confirm-start-next-period"
-                onClick={onStartNextPeriod}
+                onClick={() => onStartNextPeriod(nextPeriod)}
                 className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
               >
                 <FastForward className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
@@ -159,11 +182,15 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
             ) : (
               <button
                 id="btn-confirm-start-next-period"
-                onClick={onStartNextPeriod}
+                onClick={() => onStartNextPeriod(nextPeriod)}
                 className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-                <span>开始第 {nextPeriod} 节比赛</span>
+                <span>
+                  {isTargetScoreMode
+                    ? `开始第 ${nextPeriod} 节 (抢分目标 ${nextPeriodTarget} 分)`
+                    : `开始第 ${nextPeriod} 节比赛`}
+                </span>
               </button>
             )}
           </div>
@@ -171,7 +198,7 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
           {/* Secondary Action Options */}
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             <button
-              onClick={onCloseLater}
+              onClick={handleClose}
               className="py-1.5 sm:py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
             >
               <span>稍后准备</span>
@@ -185,7 +212,7 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
             </button>
             {isFinalPeriod ? (
               <button
-                onClick={onStartNextPeriod}
+                onClick={() => onStartNextPeriod(nextPeriod)}
                 className="py-1.5 sm:py-2 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer border border-amber-500/30 truncate"
               >
                 <FastForward className="w-3.5 h-3.5 shrink-0" />
@@ -193,7 +220,10 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
               </button>
             ) : (
               <button
-                onClick={onOpenSettings}
+                onClick={() => {
+                  if (onOpenSettings) onOpenSettings();
+                  else handleClose();
+                }}
                 className="py-1.5 sm:py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
               >
                 <Settings className="w-3.5 h-3.5 text-amber-400 shrink-0" />

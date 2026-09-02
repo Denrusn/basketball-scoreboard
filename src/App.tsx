@@ -310,61 +310,63 @@ export default function App() {
   // Main Timer Interval Loop
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
+    const shouldRunGameClock = settings.matchMode !== 'target_score' && isGameClockRunning;
+    const shouldRunShotClock = settings.useShotClock && isShotClockRunning;
 
-    if (isGameClockRunning) {
+    if (shouldRunGameClock || shouldRunShotClock) {
       interval = setInterval(() => {
-        // Decrement Game Clock
-        setGameClockTenths((prevGame) => {
-          if (prevGame <= 1) {
-            setIsGameClockRunning(false);
-            setIsShotClockRunning(false);
-            triggerHorn();
-            recordEvent('period_end', `第 ${period} 节比赛结束！`);
+        // Decrement Game Clock only when in time mode
+        if (shouldRunGameClock) {
+          setGameClockTenths((prevGame) => {
+            if (prevGame <= 1) {
+              setIsGameClockRunning(false);
+              setIsShotClockRunning(false);
+              triggerHorn();
+              recordEvent('period_end', `第 ${period} 节比赛结束！`);
 
-            // Auto popup game summary poster when match is concluded
-            const isMatchFinal = period >= settings.totalRegularPeriods && homeTeam.score !== awayTeam.score;
-            if (isMatchFinal) {
-              setIsSummaryOpen(true);
-              setSummaryInitialTab('summary');
-              recordEvent('period_end', `🏀 比赛正式结束！${homeTeam.name} ${homeTeam.score} : ${awayTeam.score} ${awayTeam.name}`);
-            } else {
-              setPeriodEndModalData({
-                isOpen: true,
-                endedPeriod: period,
-                isTargetScoreReached: false,
-              });
+              // Auto popup game summary poster when match is concluded
+              const isMatchFinal = period >= settings.totalRegularPeriods && homeTeam.score !== awayTeam.score;
+              if (isMatchFinal) {
+                setIsSummaryOpen(true);
+                setSummaryInitialTab('summary');
+                recordEvent('period_end', `🏀 比赛正式结束！${homeTeam.name} ${homeTeam.score} : ${awayTeam.score} ${awayTeam.name}`);
+              } else {
+                setPeriodEndModalData({
+                  isOpen: true,
+                  endedPeriod: period,
+                  isTargetScoreReached: false,
+                });
+              }
+              return 0;
             }
-            return 0;
-          }
 
-          // Voice Broadcast: Crucial 2-minute and 1-minute remaining marks for timed matches
-          // "每一节比赛的最后两分钟和最后一分钟的时间开始进行语音播报，就播报说：第某节比赛剩余多少多少分钟。当然，这个规则只适用于计时的比赛，不适用于抢分的比赛"
-          if (
-            settings.matchMode !== 'target_score' &&
-            settings.soundEnabled &&
-            settings.voiceAnnouncementsEnabled !== false
-          ) {
-            // Exactly 2 minutes left (1200 tenths = 120.0 seconds)
-            if (prevGame === 1200 && !announcedMilestonesRef.current.has(`${period}_2min`)) {
-              announcedMilestonesRef.current.add(`${period}_2min`);
-              const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 2);
-              recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
-              setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
+            // Voice Broadcast: Crucial 2-minute and 1-minute remaining marks for timed matches
+            if (
+              settings.soundEnabled &&
+              settings.voiceAnnouncementsEnabled !== false
+            ) {
+              // Exactly 2 minutes left (1200 tenths = 120.0 seconds)
+              if (prevGame === 1200 && !announcedMilestonesRef.current.has(`${period}_2min`)) {
+                announcedMilestonesRef.current.add(`${period}_2min`);
+                const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 2);
+                recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
+                setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
+              }
+              // Exactly 1 minute left (600 tenths = 60.0 seconds)
+              else if (prevGame === 600 && !announcedMilestonesRef.current.has(`${period}_1min`)) {
+                announcedMilestonesRef.current.add(`${period}_1min`);
+                const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 1);
+                recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
+                setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
+              }
             }
-            // Exactly 1 minute left (600 tenths = 60.0 seconds)
-            else if (prevGame === 600 && !announcedMilestonesRef.current.has(`${period}_1min`)) {
-              announcedMilestonesRef.current.add(`${period}_1min`);
-              const broadcastText = speakPeriodTimeRemaining(period, settings.totalRegularPeriods, 1);
-              recordEvent('time_announcement', `[语音播报] ${broadcastText}`);
-              setVoiceBroadcastToast({ text: broadcastText, id: Date.now() });
-            }
-          }
 
-          return prevGame - 1;
-        });
+            return prevGame - 1;
+          });
+        }
 
         // Decrement Shot Clock if running and enabled
-        if (settings.useShotClock && isShotClockRunning) {
+        if (shouldRunShotClock) {
           setShotClockTenths((prevShot) => {
             if (prevShot <= 1) {
               setIsShotClockRunning(false);
@@ -395,8 +397,17 @@ export default function App() {
     recordEvent,
   ]);
 
+  // Ensure game clock stops when switching to target score mode
+  useEffect(() => {
+    if (settings.matchMode === 'target_score') {
+      setIsGameClockRunning(false);
+    }
+  }, [settings.matchMode]);
+
   // Handle Game Clock Play / Pause
   const handleToggleGameClock = () => {
+    if (settings.matchMode === 'target_score') return;
+
     if (!isGameClockRunning && gameClockTenths === 0) {
       const minutes = period > settings.totalRegularPeriods ? settings.overtimeMinutes : settings.periodMinutes;
       setGameClockTenths(minutes * 60 * 10);
@@ -607,22 +618,27 @@ export default function App() {
         setShotClockTenths(settings.shotClockSeconds * 10);
       }
 
-      // Check Target Score Mode per period rule
+      // Check Target Score Mode cumulative rule per period:
+      // Period 1 target = 1 * targetScorePerPeriod (e.g. 30)
+      // Period 2 target = 2 * targetScorePerPeriod (e.g. 60)
+      // Period 3 target = 3 * targetScorePerPeriod (e.g. 90)
+      // Period 4 target = 4 * targetScorePerPeriod (e.g. 120 -> final)
       if (settings.matchMode === 'target_score') {
-        const targetScore = settings.targetScorePerPeriod || 30;
-        if (newQScore >= targetScore) {
+        const step = settings.targetScorePerPeriod || 30;
+        const currentPeriodTarget = period * step;
+        if (newScore >= currentPeriodTarget) {
           setIsGameClockRunning(false);
           setIsShotClockRunning(false);
           triggerHorn();
           const scoringTeamName = isHome ? homeTeam.name : awayTeam.name;
-          recordEvent('period_end', `第 ${period} 节抢分达成！${scoringTeamName} 率先达到单节 ${targetScore} 分目标！`);
 
           const isMatchFinal = period >= settings.totalRegularPeriods;
           if (isMatchFinal) {
+            recordEvent('period_end', `🏀 抢分赛全场完赛！${scoringTeamName} 率先斩获 ${newScore} 分（达成第 ${period} 节终极目标 ${currentPeriodTarget} 分），全场获胜！`);
             setIsSummaryOpen(true);
             setSummaryInitialTab('summary');
-            recordEvent('period_end', `🏀 抢分赛全场完赛！${scoringTeamName} 达成目标获胜！`);
           } else {
+            recordEvent('period_end', `第 ${period} 节抢分达成！${scoringTeamName} 率先斩获 ${newScore} 分（达成第 ${period} 节目标 ${currentPeriodTarget} 分）！`);
             setPeriodEndModalData({
               isOpen: true,
               endedPeriod: period,
@@ -1044,7 +1060,9 @@ export default function App() {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        handleToggleGameClock();
+        if (settings.matchMode !== 'target_score') {
+          handleToggleGameClock();
+        }
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleResetShotClock24();
@@ -1131,8 +1149,10 @@ export default function App() {
               targetScoreProgress={
                 settings.matchMode === 'target_score'
                   ? {
-                      currentPeriodScore: homeTeam.quarterScores[period - 1] || 0,
-                      targetScore: settings.targetScorePerPeriod || 30,
+                      currentScore: homeTeam.score,
+                      targetScore: period * (settings.targetScorePerPeriod || 30),
+                      period,
+                      step: settings.targetScorePerPeriod || 30,
                     }
                   : undefined
               }
@@ -1158,6 +1178,10 @@ export default function App() {
               onResetClock={handleResetGameClock}
               onAdjustTime={handleAdjustGameClock}
               onSetExactTime={handleSetExactGameClock}
+              matchMode={settings.matchMode}
+              targetScore={settings.targetScorePerPeriod}
+              period={period}
+              totalRegularPeriods={settings.totalRegularPeriods}
             />
 
             <ShotClock
@@ -1189,8 +1213,10 @@ export default function App() {
               targetScoreProgress={
                 settings.matchMode === 'target_score'
                   ? {
-                      currentPeriodScore: awayTeam.quarterScores[period - 1] || 0,
-                      targetScore: settings.targetScorePerPeriod || 30,
+                      currentScore: awayTeam.score,
+                      targetScore: period * (settings.targetScorePerPeriod || 30),
+                      period,
+                      step: settings.targetScorePerPeriod || 30,
                     }
                   : undefined
               }
@@ -1252,6 +1278,7 @@ export default function App() {
         <PeriodEndModal
           isOpen={periodEndModalData.isOpen}
           endedPeriod={periodEndModalData.endedPeriod}
+          settings={settings}
           totalRegularPeriods={settings.totalRegularPeriods}
           homeTeam={homeTeam}
           awayTeam={awayTeam}
@@ -1259,11 +1286,16 @@ export default function App() {
           targetScorePerPeriod={settings.targetScorePerPeriod || 30}
           isTargetScoreReached={periodEndModalData.isTargetScoreReached}
           winnerTeamName={periodEndModalData.winnerTeamName}
-          onStartNextPeriod={handleStartNextPeriod}
+          onStartNextPeriod={(nextP) => handleStartNextPeriod(nextP || periodEndModalData.endedPeriod + 1)}
           onOpenSummary={() => {
             setPeriodEndModalData(null);
             handleOpenSummary('summary');
           }}
+          onOpenSettings={() => {
+            setPeriodEndModalData(null);
+            setIsSettingsOpen(true);
+          }}
+          onCloseLater={() => setPeriodEndModalData(null)}
           onClose={() => setPeriodEndModalData(null)}
         />
       )}

@@ -257,15 +257,15 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
               <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-80" />
             </button>
 
-            {/* Match Mode Badge (Target Score vs Standard Time) */}
+            {/* Match Mode Badge (Cumulative Target Score vs Standard Time) */}
             {settings?.matchMode === 'target_score' ? (
               <button
                 onClick={onOpenSettings}
-                title="当前为单节抢分目标制，点击可调整目标分"
+                title={`累积抢分制：第 ${period} 节抢分目标为 ${period * (settings.targetScorePerPeriod || 30)} 分（每节 +${settings.targetScorePerPeriod || 30} 分），点击可调整规则`}
                 className="hidden sm:flex items-center gap-1 h-7 sm:h-8 md:h-9 px-2 sm:px-2.5 rounded-lg md:rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
               >
                 <Target className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
-                <span>目标 {settings.targetScorePerPeriod || 30}分/节</span>
+                <span>目标 {period * (settings.targetScorePerPeriod || 30)}分 (第{period}节)</span>
               </button>
             ) : null}
 

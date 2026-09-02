@@ -43,6 +43,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(settings.soundEnabled);
   const [voiceAnnouncementsEnabled, setVoiceAnnouncementsEnabled] = useState(settings.voiceAnnouncementsEnabled ?? true);
   const [panelOpacity, setPanelOpacity] = useState(settings.panelOpacity ?? 30);
+  const totalRegularPeriods = settings.totalRegularPeriods || 4;
 
   const [homeName, setHomeName] = useState(homeTeam.name);
   const [homeShort, setHomeShort] = useState(homeTeam.shortName || 'HOME');
@@ -208,14 +209,14 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-xs sm:text-sm flex items-center gap-1.5">
                     <Target className="w-4 h-4 text-emerald-400" />
-                    🎯 单节抢分目标制 (Target Score)
+                    🎯 累积抢分目标制 (Target Score)
                   </span>
                   {matchMode === 'target_score' && (
                     <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400 leading-snug">
-                  按单节分数设计，任意队伍单节率先达到目标分（如 30 分）该节立即结束。
+                  按单节分数累积抢分（如 30 分）：第1节先达30分、第2节先达60分、第3节先达90分、第4节先达120分全场完赛。
                 </p>
               </button>
             </div>
@@ -224,7 +225,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             {matchMode === 'target_score' && (
               <div className="pt-3 border-t border-white/10 space-y-2.5 animate-in fade-in">
                 <label className="block text-xs font-semibold text-slate-300">
-                  单节目标得分设置 (默认 30 分，可快速选择或自定义输入):
+                  单节抢分基数设置 (默认 30 分/节):
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {[20, 25, 30].map((pts) => (
@@ -258,8 +259,8 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 </div>
 
                 {/* Custom Number Input */}
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="text-xs text-slate-400 whitespace-nowrap">自定义目标分:</span>
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-xs text-slate-400 whitespace-nowrap">自定义单节基数:</span>
                   <input
                     type="number"
                     min="5"
@@ -275,9 +276,38 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                     className="w-24 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-white font-digital font-bold text-center text-sm focus:border-amber-400 focus:outline-none"
                   />
                   <span className="text-xs text-slate-400">分 / 节</span>
-                  <span className="text-[11px] text-amber-400 ml-auto">
-                    (任一队本节先达到 <strong>{customTargetInput || targetScorePerPeriod}</strong> 分则本节结束)
-                  </span>
+                </div>
+
+                {/* Roadmap of Target Scores across Quarters */}
+                <div className="p-3 bg-slate-900/80 rounded-xl border border-amber-500/30 text-xs space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                    <Target className="w-3.5 h-3.5 text-amber-400" />
+                    <span>全场抢分目标节点路线图 ({totalRegularPeriods} 节制):</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+                    {Array.from({ length: totalRegularPeriods }, (_, i) => i + 1).map((q) => {
+                      const qTarget = q * (parseInt(customTargetInput, 10) || targetScorePerPeriod || 30);
+                      const isLast = q === totalRegularPeriods;
+                      return (
+                        <div
+                          key={q}
+                          className={`p-2 rounded-lg text-center border ${
+                            isLast
+                              ? 'bg-amber-500/20 border-amber-500/50 text-amber-200 font-bold'
+                              : 'bg-slate-950/70 border-white/10 text-slate-300'
+                          }`}
+                        >
+                          <div className="text-[10px] text-slate-400">{isLast ? `第${q}节 (完赛)` : `第${q}节`}</div>
+                          <div className="text-sm sm:text-base font-digital font-black text-amber-400">
+                            {qTarget} 分
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    任一队总分率先达到当前节次目标分即可结束该节；达到最终目标分即宣告全场比赛结束获胜。
+                  </p>
                 </div>
               </div>
             )}
@@ -521,37 +551,51 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
           {/* Time Rules */}
           <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              比赛节次与计时时长
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  单节比赛建议时长 (分钟)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={periodMinutes}
-                  onChange={(e) => setPeriodMinutes(parseInt(e.target.value, 10) || 10)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  加时赛单节时长 (分钟)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={overtimeMinutes}
-                  onChange={(e) => setOvertimeMinutes(parseInt(e.target.value, 10) || 5)}
-                  className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
-                />
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                比赛节次与计时时长
+              </h3>
+              {matchMode === 'target_score' && (
+                <span className="text-[10px] text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                  🎯 抢分模式下比赛时钟已自动禁用
+                </span>
+              )}
             </div>
+            {matchMode === 'target_score' ? (
+              <div className="p-3 rounded-lg bg-slate-900/60 border border-amber-500/20 text-slate-400 text-xs flex items-center gap-2">
+                <Target className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>当前已选用<strong>目标得分制（单节 {targetScorePerPeriod} 分）</strong>，系统将自动禁用比赛时钟并根据得分目标自动决胜。</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    单节比赛时长 (分钟)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={periodMinutes}
+                    onChange={(e) => setPeriodMinutes(parseInt(e.target.value, 10) || 10)}
+                    className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">
+                    加时赛单节时长 (分钟)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={overtimeMinutes}
+                    onChange={(e) => setOvertimeMinutes(parseInt(e.target.value, 10) || 5)}
+                    className="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-white font-digital text-base focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Fouls & Timeouts */}

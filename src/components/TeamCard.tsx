@@ -22,8 +22,11 @@ interface TeamCardProps {
   isLeading?: boolean;
   leadMargin?: number;
   targetScoreProgress?: {
-    currentPeriodScore: number;
+    currentPeriodScore?: number;
+    currentScore?: number;
     targetScore: number;
+    period?: number;
+    step?: number;
   };
   onScore: (teamId: 'home' | 'away', points: number, playerId?: string) => void;
   onFoul: (teamId: 'home' | 'away', delta: number, playerId?: string) => void;
@@ -185,25 +188,46 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {String(team.score).padStart(2, '0')}
         </span>
 
-        {/* Target Score Mode - Current Quarter Progress */}
+        {/* Target Score Mode - Current Quarter Cumulative Progress */}
         {targetScoreProgress ? (
-          <div className="w-full max-w-[180px] sm:max-w-[220px] md:max-w-[260px] mt-0.5 sm:mt-1 px-2">
-            <div className="flex items-center justify-between text-[9px] sm:text-xs font-bold mb-0.5">
-              <span className="text-slate-400">本节抢分</span>
-              <span style={{ color: primaryColor }} className="tabular-nums font-mono">
-                {targetScoreProgress.currentPeriodScore} / {targetScoreProgress.targetScore} 分
-              </span>
-            </div>
-            <div className="w-full h-1 sm:h-1.5 bg-slate-800/90 rounded-full overflow-hidden border border-white/5">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, (targetScoreProgress.currentPeriodScore / targetScoreProgress.targetScore) * 100)}%`,
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 0 8px ${hexToRgba(primaryColor, 0.6)}`,
-                }}
-              />
-            </div>
+          <div className="w-full max-w-[190px] sm:max-w-[230px] md:max-w-[270px] mt-0.5 sm:mt-1 px-1 sm:px-2">
+            {(() => {
+              const current = targetScoreProgress.currentScore ?? targetScoreProgress.currentPeriodScore ?? team.score;
+              const target = targetScoreProgress.targetScore;
+              const percent = Math.min(100, Math.max(0, (current / target) * 100));
+              const remaining = Math.max(0, target - current);
+              return (
+                <>
+                  <div className="flex items-center justify-between text-[9px] sm:text-xs font-bold mb-0.5">
+                    <span className="text-slate-400">
+                      {targetScoreProgress.period ? `第${targetScoreProgress.period}节目标` : '抢分目标'}
+                    </span>
+                    <span style={{ color: primaryColor }} className="tabular-nums font-mono font-black">
+                      {current} / {target} 分
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 sm:h-2 bg-slate-800/90 rounded-full overflow-hidden border border-white/5">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${percent}%`,
+                        backgroundColor: primaryColor,
+                        boxShadow: `0 0 8px ${hexToRgba(primaryColor, 0.6)}`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-[8px] sm:text-[10px] text-right mt-0.5 font-medium">
+                    {current >= target ? (
+                      <span className="text-emerald-400 font-bold">🎯 率先达标！</span>
+                    ) : (
+                      <span className="text-slate-400">
+                        还差 <strong className="text-amber-300 tabular-nums">{remaining}</strong> 分达标
+                      </span>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         ) : null}
       </div>

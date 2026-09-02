@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Play, Pause, RotateCcw, Edit3, Check } from 'lucide-react';
+import { Play, Pause, RotateCcw, Edit3, Check, Target, TimerOff } from 'lucide-react';
+import { MatchMode } from '../types';
 
 interface GameClockProps {
   tenthsLeft: number; // 10 tenths = 1 second
@@ -9,6 +10,10 @@ interface GameClockProps {
   onAdjustTime: (deltaSeconds: number) => void;
   onSetExactTime: (minutes: number, seconds: number, tenths?: number) => void;
   panelOpacity?: number;
+  matchMode?: MatchMode;
+  targetScore?: number; // target step per period (e.g. 30)
+  period?: number;
+  totalRegularPeriods?: number;
 }
 
 export const GameClock: React.FC<GameClockProps> = ({
@@ -19,10 +24,18 @@ export const GameClock: React.FC<GameClockProps> = ({
   onAdjustTime,
   onSetExactTime,
   panelOpacity = 75,
+  matchMode = 'time',
+  targetScore = 30,
+  period = 1,
+  totalRegularPeriods = 4,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editMinutes, setEditMinutes] = useState('10');
   const [editSeconds, setEditSeconds] = useState('00');
+
+  const isTargetScoreMode = matchMode === 'target_score';
+  const currentPeriodTarget = period * targetScore;
+  const finalMatchTarget = totalRegularPeriods * targetScore;
 
   const totalSeconds = Math.floor(tenthsLeft / 10);
   const minutes = Math.floor(totalSeconds / 60);
@@ -34,6 +47,7 @@ export const GameClock: React.FC<GameClockProps> = ({
   const showTenths = minutes === 0 && seconds < 60;
 
   const handleStartEdit = () => {
+    if (isTargetScoreMode) return;
     setEditMinutes(String(minutes));
     setEditSeconds(String(seconds));
     setIsEditing(true);
@@ -62,19 +76,40 @@ export const GameClock: React.FC<GameClockProps> = ({
         <span className="font-bold tracking-wider flex items-center gap-1.5 text-slate-300 text-[10px] sm:text-xs md:text-sm whitespace-nowrap">
           <span
             className={`w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-2.5 md:h-2.5 rounded-full ${
-              isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
+              isTargetScoreMode
+                ? 'bg-amber-400'
+                : isRunning
+                ? 'bg-emerald-400 animate-pulse'
+                : 'bg-slate-600'
             }`}
           />
           比赛时钟
+          {isTargetScoreMode && (
+            <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">
+              抢分模式已禁用
+            </span>
+          )}
         </span>
         <span className="text-[9px] sm:text-[10px] md:text-xs text-slate-400 font-mono whitespace-nowrap">
-          [空格] 启停
+          {isTargetScoreMode ? `第${period}节目标: ${currentPeriodTarget}分` : '[空格] 启停'}
         </span>
       </div>
 
-      {/* Clock Display (Flex-1 auto fit container, tabular numbers with stable tenths slot) */}
+      {/* Clock Display or Target Score Display */}
       <div className="flex-1 min-h-0 py-0.5 md:py-1.5 lg:py-2 flex items-center justify-center select-none my-auto w-full">
-        {isEditing ? (
+        {isTargetScoreMode ? (
+          <div className="flex flex-col items-center justify-center text-center px-1">
+            <div className="flex items-center gap-1 sm:gap-2 text-amber-400 font-digital font-black">
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-amber-400 shrink-0" />
+              <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl tabular-nums drop-shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+                {currentPeriodTarget} 分
+              </span>
+            </div>
+            <p className="text-[9px] sm:text-[10px] md:text-xs text-slate-400 mt-0.5 sm:mt-1 flex items-center gap-1 justify-center flex-wrap">
+              <span>第 {period} 节达标结束 (每节 +{targetScore}分 · 全场 {finalMatchTarget}分完赛)</span>
+            </p>
+          </div>
+        ) : isEditing ? (
           <form onSubmit={handleSaveEdit} className="flex items-center gap-1.5 font-digital text-lg sm:text-2xl md:text-3xl lg:text-4xl py-0.5">
             <input
               type="number"
@@ -121,72 +156,84 @@ export const GameClock: React.FC<GameClockProps> = ({
         )}
       </div>
 
-      {/* Main Start / Pause Controls */}
-      <div className="w-full flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 shrink-0">
-        <button
-          onClick={onToggleRun}
-          className={`mobile-compact-btn flex-1 h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-2 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 transition-all text-xs sm:text-sm md:text-base lg:text-lg shadow-md active:scale-95 whitespace-nowrap cursor-pointer ${
-            isRunning
-              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black'
-              : 'bg-slate-800 hover:bg-slate-700 text-white border border-white/10'
-          }`}
-        >
-          {isRunning ? (
-            <>
-              <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
-              <span>暂停</span>
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
-              <span>开始</span>
-            </>
-          )}
-        </button>
+      {/* Main Start / Pause Controls or Target Mode Banner */}
+      {isTargetScoreMode ? (
+        <div className="w-full flex flex-col gap-1 shrink-0">
+          <div className="w-full h-7 sm:h-8 md:h-10 lg:h-12 px-2 rounded-lg sm:rounded-xl md:rounded-2xl bg-slate-950/60 border border-amber-500/20 flex items-center justify-center gap-1.5 text-slate-300 text-[10px] sm:text-xs md:text-sm font-medium">
+            <TimerOff className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>抢分模式无需计时，请直接在两侧记分</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="w-full flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 shrink-0">
+            <button
+              onClick={onToggleRun}
+              className={`mobile-compact-btn flex-1 h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-2 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl font-bold flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 transition-all text-xs sm:text-sm md:text-base lg:text-lg shadow-md active:scale-95 whitespace-nowrap cursor-pointer ${
+                isRunning
+                  ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black'
+                  : 'bg-slate-800 hover:bg-slate-700 text-white border border-white/10'
+              }`}
+            >
+              {isRunning ? (
+                <>
+                  <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
+                  <span>暂停</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5 fill-current shrink-0" />
+                  <span>开始</span>
+                </>
+              )}
+            </button>
 
-        <button
-          onClick={onResetClock}
-          title="重置本节"
-          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-        >
-          <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
-        </button>
-        <button
-          onClick={handleStartEdit}
-          title="编辑时间"
-          className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-        >
-          <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
-        </button>
-      </div>
+            <button
+              onClick={onResetClock}
+              title="重置本节"
+              className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
+            </button>
+            <button
+              onClick={handleStartEdit}
+              title="编辑时间"
+              className="mobile-compact-btn h-7 sm:h-8 md:h-10 lg:h-13 xl:h-15 2xl:h-16 px-1.5 sm:px-2.5 md:px-3 lg:px-4 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-white/5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+            >
+              <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-5 lg:h-5" />
+            </button>
+          </div>
 
-      {/* Quick Trim Buttons */}
-      <div className="w-full grid grid-cols-4 gap-1 md:gap-1.5 lg:gap-2 mt-1 md:mt-1.5 lg:mt-2 pt-1 md:pt-1.5 lg:pt-2 border-t border-white/5 shrink-0">
-        <button
-          onClick={() => onAdjustTime(-10)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
-        >
-          -10s
-        </button>
-        <button
-          onClick={() => onAdjustTime(-1)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
-        >
-          -1s
-        </button>
-        <button
-          onClick={() => onAdjustTime(1)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
-        >
-          +1s
-        </button>
-        <button
-          onClick={() => onAdjustTime(10)}
-          className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
-        >
-          +10s
-        </button>
-      </div>
+          {/* Quick Trim Buttons */}
+          <div className="w-full grid grid-cols-4 gap-1 md:gap-1.5 lg:gap-2 mt-1 md:mt-1.5 lg:mt-2 pt-1 md:pt-1.5 lg:pt-2 border-t border-white/5 shrink-0">
+            <button
+              onClick={() => onAdjustTime(-10)}
+              className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+            >
+              -10s
+            </button>
+            <button
+              onClick={() => onAdjustTime(-1)}
+              className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+            >
+              -1s
+            </button>
+            <button
+              onClick={() => onAdjustTime(1)}
+              className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+            >
+              +1s
+            </button>
+            <button
+              onClick={() => onAdjustTime(10)}
+              className="h-4.5 sm:h-5 md:h-6 lg:h-8 xl:h-9 text-[8px] sm:text-[9px] md:text-xs lg:text-sm font-semibold rounded md:rounded-lg lg:rounded-xl bg-slate-950/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors tabular-nums whitespace-nowrap cursor-pointer"
+            >
+              +10s
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
+
