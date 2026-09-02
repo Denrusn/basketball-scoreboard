@@ -90,7 +90,10 @@ jobs:
   # ==========================================
   build-ios:
     name: 🍎 Build iOS App
-    runs-on: macos-14
+    # Capacitor 8 requires Xcode 26+ (official docs); macos-26 images ship Xcode 26.6 by default.
+    # Older runners (macos-14 -> Xcode 15.4) fail to compile Capacitor 8 official plugins
+    # (e.g. @capacitor/share) with "CAPPluginCall has no member 'reject'" / "missing argument for parameter #2".
+    runs-on: macos-26
 
     steps:
       - name: 📥 Checkout Code
@@ -137,6 +140,7 @@ jobs:
       - name: 🔨 Build iOS Project (Unsigned App via SPM, no CocoaPods)
         working-directory: ios/App
         run: |
+          xcodebuild -version
           # Capacitor 8 uses Swift Package Manager; fall back to CocoaPods only if Podfile exists
           if [ -f "Podfile" ]; then
             pod install
