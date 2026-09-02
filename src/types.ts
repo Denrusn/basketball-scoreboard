@@ -6,7 +6,7 @@ export interface Player {
   fouls: number;
   rebounds: number;
   assists: number;
-  isOnCourt: boolean;
+  isOnCourt?: boolean;
   twoPointers: number;
   threePointers: number;
   freeThrows: number;

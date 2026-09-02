@@ -138,29 +138,34 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
 
           {/* HUGE CALL-TO-ACTION BUTTON */}
           <div>
-            <button
-              id="btn-confirm-start-next-period"
-              onClick={onStartNextPeriod}
-              className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-              {isOvertimeNeeded ? (
-                <>
-                  <FastForward className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-                  <span>平局！进入加时赛 (OT 1)</span>
-                </>
-              ) : isFinalPeriod ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-                  <span>常规时间已完赛！开启下一节 / 加时</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-                  <span>开始第 {nextPeriod} 节比赛</span>
-                </>
-              )}
-            </button>
+            {isOvertimeNeeded ? (
+              <button
+                id="btn-confirm-start-next-period"
+                onClick={onStartNextPeriod}
+                className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
+              >
+                <FastForward className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
+                <span>比分持平！进入加时赛 (OT 1)</span>
+              </button>
+            ) : isFinalPeriod ? (
+              <button
+                id="btn-confirm-open-summary"
+                onClick={onOpenSummary}
+                className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
+              >
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
+                <span>🎉 比赛完赛！查看比赛综述海报</span>
+              </button>
+            ) : (
+              <button
+                id="btn-confirm-start-next-period"
+                onClick={onStartNextPeriod}
+                className="group relative w-full py-2.5 sm:py-3.5 landscape:py-2.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 active:scale-[0.98] text-slate-950 font-black text-sm sm:text-base md:text-lg shadow-xl shadow-amber-500/25 border-2 border-amber-300 transition-all flex items-center justify-center gap-2 cursor-pointer overflow-hidden"
+              >
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
+                <span>开始第 {nextPeriod} 节比赛</span>
+              </button>
+            )}
           </div>
 
           {/* Secondary Action Options */}
@@ -176,15 +181,25 @@ export const PeriodEndModal: React.FC<PeriodEndModalProps> = ({
               className="py-1.5 sm:py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
             >
               <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>本节简报</span>
+              <span>全场海报</span>
             </button>
-            <button
-              onClick={onOpenSettings}
-              className="py-1.5 sm:py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
-            >
-              <Settings className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>分数调整</span>
-            </button>
+            {isFinalPeriod ? (
+              <button
+                onClick={onStartNextPeriod}
+                className="py-1.5 sm:py-2 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer border border-amber-500/30 truncate"
+              >
+                <FastForward className="w-3.5 h-3.5 shrink-0" />
+                <span>开启加时/下节</span>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenSettings}
+                className="py-1.5 sm:py-2 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-semibold text-[11px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer truncate"
+              >
+                <Settings className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>调整参数</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

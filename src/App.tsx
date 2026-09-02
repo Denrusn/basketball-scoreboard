@@ -320,11 +320,20 @@ export default function App() {
             setIsShotClockRunning(false);
             triggerHorn();
             recordEvent('period_end', `第 ${period} 节比赛结束！`);
-            setPeriodEndModalData({
-              isOpen: true,
-              endedPeriod: period,
-              isTargetScoreReached: false,
-            });
+
+            // Auto popup game summary poster when match is concluded
+            const isMatchFinal = period >= settings.totalRegularPeriods && homeTeam.score !== awayTeam.score;
+            if (isMatchFinal) {
+              setIsSummaryOpen(true);
+              setSummaryInitialTab('summary');
+              recordEvent('period_end', `🏀 比赛正式结束！${homeTeam.name} ${homeTeam.score} : ${awayTeam.score} ${awayTeam.name}`);
+            } else {
+              setPeriodEndModalData({
+                isOpen: true,
+                endedPeriod: period,
+                isTargetScoreReached: false,
+              });
+            }
             return 0;
           }
 
@@ -607,18 +616,27 @@ export default function App() {
           triggerHorn();
           const scoringTeamName = isHome ? homeTeam.name : awayTeam.name;
           recordEvent('period_end', `第 ${period} 节抢分达成！${scoringTeamName} 率先达到单节 ${targetScore} 分目标！`);
-          setPeriodEndModalData({
-            isOpen: true,
-            endedPeriod: period,
-            winnerTeamName: scoringTeamName,
-            isTargetScoreReached: true,
-          });
+
+          const isMatchFinal = period >= settings.totalRegularPeriods;
+          if (isMatchFinal) {
+            setIsSummaryOpen(true);
+            setSummaryInitialTab('summary');
+            recordEvent('period_end', `🏀 抢分赛全场完赛！${scoringTeamName} 达成目标获胜！`);
+          } else {
+            setPeriodEndModalData({
+              isOpen: true,
+              endedPeriod: period,
+              winnerTeamName: scoringTeamName,
+              isTargetScoreReached: true,
+            });
+          }
         }
       }
     }
 
+    const playerLabel = scoredPlayerName ? `#${scoredPlayerNumber} ${scoredPlayerName}` : `#${scoredPlayerNumber}号球员`;
     const desc = playerId
-      ? `#${scoredPlayerNumber} ${scoredPlayerName} ${points > 0 ? `+${points}分` : `${points}分`} (${points === 3 ? '三分命中' : points === 2 ? '两分投进' : '罚球得分'})`
+      ? `${playerLabel} ${points > 0 ? `+${points}分` : `${points}分`} (${points === 3 ? '三分命中' : points === 2 ? '两分投进' : '罚球得分'})`
       : `${points > 0 ? `+${points}分` : `${points}分`} 得分`;
 
     const updatedHomeScore = isHome ? newScore : homeTeam.score;
@@ -664,8 +682,9 @@ export default function App() {
       triggerWhistle();
     }
 
+    const foulPlayerLabel = fouledPlayerName ? `#${fouledPlayerNumber} ${fouledPlayerName}` : `#${fouledPlayerNumber}号球员`;
     const desc = playerId
-      ? `#${fouledPlayerNumber} ${fouledPlayerName} 累计犯规 (${delta > 0 ? '+1' : '-1'})`
+      ? `${foulPlayerLabel} 累计犯规 (${delta > 0 ? '+1' : '-1'})`
       : `球队犯规 (${delta > 0 ? '+1' : '-1'})`;
 
     recordEvent('foul', desc, teamId, undefined, fouledPlayerName, fouledPlayerNumber);
@@ -683,7 +702,7 @@ export default function App() {
 
     const updatedPlayers = targetTeam.players.map((p) => {
       if (p.id === playerId) {
-        rebPlayerName = p.name || `球员 #${p.number}`;
+        rebPlayerName = p.name;
         rebPlayerNumber = p.number;
         return {
           ...p,
@@ -711,8 +730,9 @@ export default function App() {
       triggerScoreBeep(1);
     }
 
+    const rebPlayerLabel = rebPlayerName ? `#${rebPlayerNumber} ${rebPlayerName}` : `#${rebPlayerNumber}号球员`;
     const desc = playerId
-      ? `#${rebPlayerNumber} ${rebPlayerName} 记篮板 (${delta > 0 ? '+1' : '-1'})`
+      ? `${rebPlayerLabel} 记篮板 (${delta > 0 ? '+1' : '-1'})`
       : `球队篮板 (${delta > 0 ? '+1' : '-1'})`;
 
     recordEvent('rebound', desc, teamId, undefined, rebPlayerName, rebPlayerNumber);
@@ -730,7 +750,7 @@ export default function App() {
 
     const updatedPlayers = targetTeam.players.map((p) => {
       if (p.id === playerId) {
-        astPlayerName = p.name || `球员 #${p.number}`;
+        astPlayerName = p.name;
         astPlayerNumber = p.number;
         return {
           ...p,
@@ -758,8 +778,9 @@ export default function App() {
       triggerScoreBeep(2);
     }
 
+    const astPlayerLabel = astPlayerName ? `#${astPlayerNumber} ${astPlayerName}` : `#${astPlayerNumber}号球员`;
     const desc = playerId
-      ? `#${astPlayerNumber} ${astPlayerName} 记助攻 (${delta > 0 ? '+1' : '-1'})`
+      ? `${astPlayerLabel} 记助攻 (${delta > 0 ? '+1' : '-1'})`
       : `球队助攻 (${delta > 0 ? '+1' : '-1'})`;
 
     recordEvent('assist', desc, teamId, undefined, astPlayerName, astPlayerNumber);
@@ -913,7 +934,7 @@ export default function App() {
   // Roster handlers
   const handleAddPlayer = (
     teamId: 'home' | 'away',
-    playerData: { number: number; name: string; isOnCourt: boolean }
+    playerData: { number: number; name: string }
   ) => {
     const newPlayer = {
       ...playerData,
@@ -940,6 +961,19 @@ export default function App() {
     } else {
       setAwayTeam((prev) => ({ ...prev, players: prev.players.filter((p) => p.id !== playerId) }));
     }
+  };
+
+  const handleUpdatePlayer = (
+    teamId: 'home' | 'away',
+    playerId: string,
+    updates: { number: number; name: string }
+  ) => {
+    const updater = (prev: Team) => ({
+      ...prev,
+      players: prev.players.map((p) => (p.id === playerId ? { ...p, ...updates } : p)),
+    });
+    if (teamId === 'home') setHomeTeam(updater);
+    else setAwayTeam(updater);
   };
 
   const handleTogglePlayerCourt = (teamId: 'home' | 'away', playerId: string) => {
@@ -1242,6 +1276,7 @@ export default function App() {
         awayTeam={awayTeam}
         onAddPlayer={handleAddPlayer}
         onRemovePlayer={handleRemovePlayer}
+        onUpdatePlayer={handleUpdatePlayer}
         onTogglePlayerCourt={handleTogglePlayerCourt}
         onScorePlayer={handleScore}
         onFoulPlayer={(tId, pId) => handleFoul(tId, 1, pId)}

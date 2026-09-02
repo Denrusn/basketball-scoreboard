@@ -17,9 +17,14 @@ import {
   ListOrdered,
   ChevronDown,
   History,
+  Users,
+  BarChart2,
+  Flame,
+  Shield,
+  Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Team, GameSettings, GameEvent } from '../types';
+import { Team, GameSettings, GameEvent, Player } from '../types';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import {
   exportElementAsPNG,
@@ -74,6 +79,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
 
   const isHomeWinner = homeTeam.score > awayTeam.score;
   const isAwayWinner = awayTeam.score > homeTeam.score;
+  const scoreDiff = homeTeam.score - awayTeam.score;
 
   // Trigger celebration confetti on open if there is a leader
   useEffect(() => {
@@ -363,54 +369,93 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                 </div>
 
                 {/* Score Banner */}
-                <div className="bg-slate-900/90 rounded-2xl p-4 sm:p-6 border border-slate-800/80 text-center relative overflow-hidden">
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                <div className="bg-slate-900/90 rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 text-center relative overflow-visible">
+                  <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>终场比分 & 胜负裁决</span>
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   </div>
 
-                  <div className="grid grid-cols-3 items-center gap-3 my-2">
-                    {/* Home Team */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs sm:text-sm font-semibold text-amber-400">
+                  <div className="grid grid-cols-3 items-center gap-2 sm:gap-4 my-1">
+                    {/* Home Team Pod */}
+                    <div className="relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-slate-950/70 border border-white/5 min-h-[96px] sm:min-h-[110px]">
+                      {isHomeWinner && (
+                        <div className="absolute -top-3 sm:-top-3.5 left-1/2 -translate-x-1/2 z-20 px-2.5 sm:px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs tracking-wider shadow-lg shadow-amber-500/40 border border-amber-200 flex items-center gap-1.5 whitespace-nowrap">
+                          <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-slate-950 text-slate-950" />
+                          <span>胜方 WINNER</span>
+                        </div>
+                      )}
+                      <span
+                        className="text-xs sm:text-sm font-bold tracking-wide"
+                        style={{ color: homeTeam.color || '#f59e0b' }}
+                      >
                         [主队]
                       </span>
-                      <span className="text-base sm:text-2xl font-black text-white truncate max-w-[180px]">
+                      <span
+                        className="text-sm sm:text-xl md:text-2xl font-black text-white truncate max-w-[120px] sm:max-w-[180px] mt-0.5"
+                        title={homeTeam.name}
+                      >
                         {homeTeam.name}
                       </span>
-                      {isHomeWinner && (
-                        <span className="mt-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-bold border border-amber-500/40 flex items-center gap-1">
-                          <Trophy className="w-3 h-3 text-amber-400" /> 胜方 WINNER
-                        </span>
-                      )}
+                      <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate max-w-[120px] sm:max-w-[180px]">
+                        {homeTeam.shortName || '主场'}
+                      </span>
                     </div>
 
                     {/* Center Score */}
                     <div className="flex flex-col items-center justify-center">
-                      <div className="font-digital text-4xl sm:text-6xl font-black tracking-tight flex items-center gap-2 sm:gap-4">
-                        <span className="text-amber-400">{homeTeam.score}</span>
+                      <div className="font-digital text-3xl sm:text-5xl md:text-6xl font-black tracking-tight flex items-center gap-1.5 sm:gap-3">
+                        <span style={{ color: homeTeam.color || '#f59e0b' }}>
+                          {homeTeam.score}
+                        </span>
                         <span className="text-slate-600">:</span>
-                        <span className="text-cyan-400">{awayTeam.score}</span>
+                        <span style={{ color: awayTeam.color || '#06b6d4' }}>
+                          {awayTeam.score}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 mt-1 font-digital">
-                        {period <= totalRegularPeriods ? `全场 Q${period}` : `全场 OT${period - totalRegularPeriods}`}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap justify-center">
+                        <span className="text-[10px] sm:text-xs text-slate-300 font-digital bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/5">
+                          {period <= totalRegularPeriods ? `全场 Q${period}` : `全场 OT${period - totalRegularPeriods}`}
+                        </span>
+                        {scoreDiff !== 0 && (
+                          <span
+                            className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md font-digital ${
+                              scoreDiff > 0
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                            }`}
+                          >
+                            {scoreDiff > 0
+                              ? `${homeTeam.shortName || '主队'} +${scoreDiff}分`
+                              : `${awayTeam.shortName || '客队'} +${Math.abs(scoreDiff)}分`}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Away Team */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs sm:text-sm font-semibold text-cyan-400">
+                    {/* Away Team Pod */}
+                    <div className="relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-slate-950/70 border border-white/5 min-h-[96px] sm:min-h-[110px]">
+                      {isAwayWinner && (
+                        <div className="absolute -top-3 sm:-top-3.5 left-1/2 -translate-x-1/2 z-20 px-2.5 sm:px-3.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-400 text-slate-950 font-black text-[10px] sm:text-xs tracking-wider shadow-lg shadow-cyan-500/40 border border-cyan-200 flex items-center gap-1.5 whitespace-nowrap">
+                          <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-slate-950 text-slate-950" />
+                          <span>胜方 WINNER</span>
+                        </div>
+                      )}
+                      <span
+                        className="text-xs sm:text-sm font-bold tracking-wide"
+                        style={{ color: awayTeam.color || '#06b6d4' }}
+                      >
                         [客队]
                       </span>
-                      <span className="text-base sm:text-2xl font-black text-white truncate max-w-[180px]">
+                      <span
+                        className="text-sm sm:text-xl md:text-2xl font-black text-white truncate max-w-[120px] sm:max-w-[180px] mt-0.5"
+                        title={awayTeam.name}
+                      >
                         {awayTeam.name}
                       </span>
-                      {isAwayWinner && (
-                        <span className="mt-1 px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[11px] font-bold border border-cyan-500/40 flex items-center gap-1">
-                          <Trophy className="w-3 h-3 text-cyan-400" /> 胜方 WINNER
-                        </span>
-                      )}
+                      <span className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate max-w-[120px] sm:max-w-[180px]">
+                        {awayTeam.shortName || '客场'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -418,8 +463,11 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                 {/* Quarter Breakdown Table */}
                 <div className="bg-slate-900/80 rounded-xl p-3.5 border border-slate-800">
                   <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                    <span>分节得分走势表</span>
-                    <span className="text-[10px] text-slate-400 font-normal font-sans">各节比分明细</span>
+                    <span className="flex items-center gap-1.5">
+                      <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
+                      分节得分明细表
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal font-sans">各节比分与单节走势</span>
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-center text-xs font-digital border-collapse">
@@ -436,7 +484,10 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">
                         <tr>
-                          <td className="py-2 px-2.5 text-left font-sans font-bold text-amber-400 truncate max-w-[120px]">
+                          <td
+                            className="py-2 px-2.5 text-left font-sans font-bold truncate max-w-[120px]"
+                            style={{ color: homeTeam.color || '#f59e0b' }}
+                          >
                             {homeTeam.name}
                           </td>
                           {periodsList.map((p, idx) => (
@@ -444,12 +495,18 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                               {homeTeam.quarterScores[idx] || 0}
                             </td>
                           ))}
-                          <td className="py-2 px-2.5 text-right font-black text-sm text-amber-400">
+                          <td
+                            className="py-2 px-2.5 text-right font-black text-sm"
+                            style={{ color: homeTeam.color || '#f59e0b' }}
+                          >
                             {homeTeam.score}
                           </td>
                         </tr>
                         <tr>
-                          <td className="py-2 px-2.5 text-left font-sans font-bold text-cyan-400 truncate max-w-[120px]">
+                          <td
+                            className="py-2 px-2.5 text-left font-sans font-bold truncate max-w-[120px]"
+                            style={{ color: awayTeam.color || '#06b6d4' }}
+                          >
                             {awayTeam.name}
                           </td>
                           {periodsList.map((p, idx) => (
@@ -457,7 +514,10 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                               {awayTeam.quarterScores[idx] || 0}
                             </td>
                           ))}
-                          <td className="py-2 px-2.5 text-right font-black text-sm text-cyan-400">
+                          <td
+                            className="py-2 px-2.5 text-right font-black text-sm"
+                            style={{ color: awayTeam.color || '#06b6d4' }}
+                          >
                             {awayTeam.score}
                           </td>
                         </tr>
@@ -466,7 +526,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                   </div>
                 </div>
 
-                {/* Score Trend Mini Chart embedded inside poster */}
+                {/* Score Trend & Lead Margin Fluctuation Visualizers (比分趋势 + 分差波动) */}
                 <div className="pt-1">
                   <ScoreTrendChart
                     events={events}
@@ -474,9 +534,265 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                     awayTeam={awayTeam}
                     period={period}
                     totalRegularPeriods={totalRegularPeriods}
-                    height={200}
-                    isCompact={true}
+                    height={180}
+                    isCompact={false}
+                    showBothStacked={true}
+                    showControls={false}
                   />
+                </div>
+
+                {/* Detailed Player Box Score Section (双方球员具体数据展示) */}
+                <div className="bg-slate-900/90 rounded-2xl p-3.5 sm:p-4 border border-slate-800/80 space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                      <Users className="w-4 h-4 text-amber-400" />
+                      <span>双方球员详细技术统计 (Box Score)</span>
+                    </h3>
+                    <span className="text-[10px] text-slate-400">
+                      PTS:得分 · 3PM:三分 · 2PM:两分 · FT:罚球 · REB:篮板 · AST:助攻 · PF:犯规
+                    </span>
+                  </div>
+
+                  {/* Player Stats Tables Grid: Home & Away */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Home Team Players Table */}
+                    <div className="bg-slate-950/80 rounded-xl p-3 border border-white/5 flex flex-col">
+                      <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: homeTeam.color || '#f59e0b' }}
+                          />
+                          <span
+                            className="font-black text-xs sm:text-sm"
+                            style={{ color: homeTeam.color || '#f59e0b' }}
+                          >
+                            {homeTeam.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            ({homeTeam.players.length} 名球员)
+                          </span>
+                        </div>
+                        <span className="text-xs font-black font-digital text-white">
+                          总得分: {homeTeam.score}
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs font-digital border-collapse">
+                          <thead>
+                            <tr className="text-slate-400 border-b border-white/10 text-[10px] sm:text-[11px] font-sans">
+                              <th className="py-1.5 px-1.5 text-left font-semibold">球员</th>
+                              <th className="py-1.5 px-1 text-center font-bold text-amber-300">得分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">3分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">2分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">罚球</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">篮板</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">助攻</th>
+                              <th className="py-1.5 px-1 text-center font-semibold text-rose-300">犯规</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {homeTeam.players.length === 0 ? (
+                              <tr>
+                                <td colSpan={8} className="py-3 text-center text-slate-500 font-sans text-xs">
+                                  暂无球员名单
+                                </td>
+                              </tr>
+                            ) : (
+                              homeTeam.players.map((p) => (
+                                <tr
+                                  key={p.id}
+                                  className={`hover:bg-white/[0.02] ${
+                                    p.points > 0 ? 'text-slate-100' : 'text-slate-400'
+                                  }`}
+                                >
+                                  <td className="py-1.5 px-1.5 text-left font-sans">
+                                    <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+                                      <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-300 font-digital font-bold text-[10px] flex items-center justify-center shrink-0 border border-amber-500/30">
+                                        #{p.number}
+                                      </span>
+                                      <span className="font-semibold text-white truncate text-[11px] sm:text-xs">
+                                        {p.name || `球员 #${p.number}`}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center font-black text-amber-300 text-xs sm:text-sm">
+                                    {p.points}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.threePointers || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.twoPointers || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.freeThrows || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.rebounds || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.assists || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center font-bold text-rose-400">
+                                    {p.fouls || 0}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                          {homeTeam.players.length > 0 && (
+                            <tfoot>
+                              <tr className="border-t border-white/15 font-bold text-slate-200 text-[11px] bg-white/[0.02]">
+                                <td className="py-2 px-1.5 text-left font-sans">全队合计</td>
+                                <td className="py-2 px-1 text-center font-black text-amber-300 text-xs sm:text-sm">
+                                  {homeTeam.score}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {homeTeam.players.reduce((s, p) => s + (p.threePointers || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {homeTeam.players.reduce((s, p) => s + (p.twoPointers || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {homeTeam.players.reduce((s, p) => s + (p.freeThrows || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-cyan-300">
+                                  {homeTeam.rebounds || homeTeam.players.reduce((s, p) => s + (p.rebounds || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-cyan-300">
+                                  {homeTeam.assists || homeTeam.players.reduce((s, p) => s + (p.assists || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-rose-400">
+                                  {homeTeam.fouls}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Away Team Players Table */}
+                    <div className="bg-slate-950/80 rounded-xl p-3 border border-white/5 flex flex-col">
+                      <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: awayTeam.color || '#06b6d4' }}
+                          />
+                          <span
+                            className="font-black text-xs sm:text-sm"
+                            style={{ color: awayTeam.color || '#06b6d4' }}
+                          >
+                            {awayTeam.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            ({awayTeam.players.length} 名球员)
+                          </span>
+                        </div>
+                        <span className="text-xs font-black font-digital text-white">
+                          总得分: {awayTeam.score}
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs font-digital border-collapse">
+                          <thead>
+                            <tr className="text-slate-400 border-b border-white/10 text-[10px] sm:text-[11px] font-sans">
+                              <th className="py-1.5 px-1.5 text-left font-semibold">球员</th>
+                              <th className="py-1.5 px-1 text-center font-bold text-cyan-300">得分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">3分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">2分</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">罚球</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">篮板</th>
+                              <th className="py-1.5 px-1 text-center font-semibold">助攻</th>
+                              <th className="py-1.5 px-1 text-center font-semibold text-rose-300">犯规</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {awayTeam.players.length === 0 ? (
+                              <tr>
+                                <td colSpan={8} className="py-3 text-center text-slate-500 font-sans text-xs">
+                                  暂无球员名单
+                                </td>
+                              </tr>
+                            ) : (
+                              awayTeam.players.map((p) => (
+                                <tr
+                                  key={p.id}
+                                  className={`hover:bg-white/[0.02] ${
+                                    p.points > 0 ? 'text-slate-100' : 'text-slate-400'
+                                  }`}
+                                >
+                                  <td className="py-1.5 px-1.5 text-left font-sans">
+                                    <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+                                      <span className="w-5 h-5 rounded-md bg-cyan-500/20 text-cyan-300 font-digital font-bold text-[10px] flex items-center justify-center shrink-0 border border-cyan-500/30">
+                                        #{p.number}
+                                      </span>
+                                      <span className="font-semibold text-white truncate text-[11px] sm:text-xs">
+                                        {p.name || `球员 #${p.number}`}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center font-black text-cyan-300 text-xs sm:text-sm">
+                                    {p.points}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.threePointers || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.twoPointers || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.freeThrows || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.rebounds || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center text-slate-300">
+                                    {p.assists || 0}
+                                  </td>
+                                  <td className="py-1.5 px-1 text-center font-bold text-rose-400">
+                                    {p.fouls || 0}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                          {awayTeam.players.length > 0 && (
+                            <tfoot>
+                              <tr className="border-t border-white/15 font-bold text-slate-200 text-[11px] bg-white/[0.02]">
+                                <td className="py-2 px-1.5 text-left font-sans">全队合计</td>
+                                <td className="py-2 px-1 text-center font-black text-cyan-300 text-xs sm:text-sm">
+                                  {awayTeam.score}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {awayTeam.players.reduce((s, p) => s + (p.threePointers || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {awayTeam.players.reduce((s, p) => s + (p.twoPointers || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center">
+                                  {awayTeam.players.reduce((s, p) => s + (p.freeThrows || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-cyan-300">
+                                  {awayTeam.rebounds || awayTeam.players.reduce((s, p) => s + (p.rebounds || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-cyan-300">
+                                  {awayTeam.assists || awayTeam.players.reduce((s, p) => s + (p.assists || 0), 0)}
+                                </td>
+                                <td className="py-2 px-1 text-center text-rose-400">
+                                  {awayTeam.fouls}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
+                        </table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* MVP & Key Stats Grid */}
@@ -516,7 +832,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                   {/* Team Stats Summary */}
                   <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 grid grid-cols-2 gap-2 text-xs">
                     <div className="border-r border-slate-800/80 pr-2">
-                      <div className="text-amber-400 font-bold text-[11px] truncate mb-1">
+                      <div className="font-bold text-[11px] truncate mb-1" style={{ color: homeTeam.color || '#f59e0b' }}>
                         {homeTeam.shortName || homeTeam.name}
                       </div>
                       <div className="text-[11px] text-slate-300 space-y-0.5">
@@ -536,7 +852,7 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
                     </div>
 
                     <div className="pl-1">
-                      <div className="text-cyan-400 font-bold text-[11px] truncate mb-1">
+                      <div className="font-bold text-[11px] truncate mb-1" style={{ color: awayTeam.color || '#06b6d4' }}>
                         {awayTeam.shortName || awayTeam.name}
                       </div>
                       <div className="text-[11px] text-slate-300 space-y-0.5">

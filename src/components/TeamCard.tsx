@@ -229,12 +229,13 @@ export const TeamCard: React.FC<TeamCardProps> = ({
           {/* Players Jersey Number Pills (Single Row Horizontal) */}
           {team.players.map((player) => {
             const isSelected = selectedPlayerId === player.id;
+            const playerNameText = player.name ? ` (${player.name})` : '';
             return (
               <button
                 key={player.id}
                 type="button"
                 onClick={() => setSelectedPlayerId(isSelected ? '' : player.id)}
-                title={`#${player.number}号 (${player.points}分 | ${player.rebounds || 0}板 | ${player.assists || 0}助 | ${player.fouls}犯)`}
+                title={`#${player.number}号${playerNameText} - ${player.points}分 | ${player.rebounds || 0}板 | ${player.assists || 0}助 | ${player.fouls}犯`}
                 style={
                   isSelected
                     ? {
@@ -372,7 +373,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               type="button"
               onClick={() => handleQuickRebound(1)}
               className="w-5 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center justify-center text-xs font-bold shrink-0 cursor-pointer active:scale-95"
-              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name} 记1个篮板` : '记全队1个篮板'}
+              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name || ''} 记1个篮板`.trim() : '记全队1个篮板'}
             >
               <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
@@ -411,7 +412,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               type="button"
               onClick={() => handleQuickAssist(1)}
               className="w-5 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 flex items-center justify-center text-xs font-bold shrink-0 cursor-pointer active:scale-95"
-              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name} 记1次助攻` : '记全队1次助攻'}
+              title={selectedPlayer ? `为 #${selectedPlayer.number} ${selectedPlayer.name || ''} 记1次助攻`.trim() : '记全队1次助攻'}
             >
               <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>

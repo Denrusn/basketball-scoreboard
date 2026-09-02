@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Team, GameEvent } from '../types';
 import { TrendingUp, BarChart2, Zap, Trophy, Flame, Layers } from 'lucide-react';
 import { hexToRgba } from '../utils/teamColors';
@@ -11,6 +11,9 @@ interface ScoreTrendChartProps {
   totalRegularPeriods: number;
   height?: number;
   isCompact?: boolean;
+  defaultView?: 'score' | 'diff' | 'both';
+  showControls?: boolean;
+  showBothStacked?: boolean;
 }
 
 export interface TrendDataPoint {
@@ -35,10 +38,24 @@ export const ScoreTrendChart: React.FC<ScoreTrendChartProps> = ({
   totalRegularPeriods,
   height = 280,
   isCompact = false,
+  defaultView = 'score',
+  showControls = true,
+  showBothStacked = false,
 }) => {
-  const [viewMode, setViewMode] = useState<'score' | 'diff' | 'both'>('score');
+  const [viewMode, setViewMode] = useState<'score' | 'diff' | 'both'>(
+    showBothStacked ? 'both' : defaultView
+  );
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync viewMode when showBothStacked or defaultView changes
+  useEffect(() => {
+    if (showBothStacked) {
+      setViewMode('both');
+    } else if (defaultView) {
+      setViewMode(defaultView);
+    }
+  }, [showBothStacked, defaultView]);
 
   const homeColor = homeTeam.color || '#ef4444';
   const awayColor = awayTeam.color || '#3b82f6';
@@ -328,43 +345,45 @@ export const ScoreTrendChart: React.FC<ScoreTrendChartProps> = ({
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center bg-slate-900 border border-white/10 rounded-xl p-0.5 text-xs">
-          <button
-            onClick={() => setViewMode('score')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'score'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>📈 比分走势</span>
-          </button>
+        {showControls && (
+          <div className="flex items-center bg-slate-900 border border-white/10 rounded-xl p-0.5 text-xs">
+            <button
+              onClick={() => setViewMode('score')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'score'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>📈 比分走势</span>
+            </button>
 
-          <button
-            onClick={() => setViewMode('diff')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'diff'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BarChart2 className="w-3.5 h-3.5" />
-            <span>📊 分差波动</span>
-          </button>
+            <button
+              onClick={() => setViewMode('diff')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'diff'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>📊 分差波动</span>
+            </button>
 
-          <button
-            onClick={() => setViewMode('both')}
-            className={`hidden sm:flex px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1.5 cursor-pointer ${
-              viewMode === 'both'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>⚡ 综合对比</span>
-          </button>
-        </div>
+            <button
+              onClick={() => setViewMode('both')}
+              className={`hidden sm:flex px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1.5 cursor-pointer ${
+                viewMode === 'both'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>⚡ 综合对比</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Key Stats Cards Grid */}

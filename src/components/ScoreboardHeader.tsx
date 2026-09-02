@@ -489,7 +489,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => {
-                      onOpenSummary('trend');
+                      onOpenSummary('summary');
                       setActiveDropdown(null);
                     }}
                     className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
@@ -498,7 +498,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       <TrendingUp className="w-4 h-4 text-emerald-400" />
                       <span>比赛战报与统计</span>
                     </span>
-                    <span className="text-[10px] text-emerald-400/90 font-normal">走势/报告</span>
+                    <span className="text-[10px] text-emerald-400/90 font-normal">海报/数据</span>
                   </button>
 
                   <button
