@@ -97,6 +97,7 @@ jobs:
               -scheme App \
               -configuration Release \
               -sdk iphoneos \
+              -derivedDataPath build \
               CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGN_IDENTITY="" \
@@ -107,6 +108,7 @@ jobs:
               -scheme App \
               -configuration Release \
               -sdk iphoneos \
+              -derivedDataPath build \
               CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGN_IDENTITY="" \
@@ -115,14 +117,14 @@ jobs:
 
       - name: 📦 Compress iOS App
         run: |
-          APP_DIR=$(find ios/App/build -name "App.app" -type d 2>/dev/null | head -1)
+          APP_DIR=$(find ios/App -name "App.app" -type d 2>/dev/null | head -1)
           if [ -z "$APP_DIR" ]; then
-            echo "App.app not found in ios/App/build"
+            echo "App.app not found"
             exit 1
           fi
           cd "$(dirname "$APP_DIR")"
           zip -r BasketballScoreboard-iOS.zip App.app
-          mv BasketballScoreboard-iOS.zip ../../../../BasketballScoreboard-iOS.zip
+          mv BasketballScoreboard-iOS.zip "$GITHUB_WORKSPACE/ios/BasketballScoreboard-iOS.zip"
 
       - name: 🚀 Upload iOS App Artifact
         uses: actions/upload-artifact@v4
