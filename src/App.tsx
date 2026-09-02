@@ -133,9 +133,15 @@ export default function App() {
   const [isRosterOpen, setIsRosterOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [summaryInitialTab, setSummaryInitialTab] = useState<'summary' | 'trend' | 'events'>('summary');
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  const handleOpenSummary = useCallback((tab: 'summary' | 'trend' | 'events' = 'summary') => {
+    setSummaryInitialTab(tab);
+    setIsSummaryOpen(true);
+  }, []);
 
   // Big Screen Period End Prompt Modal
   const [periodEndModalData, setPeriodEndModalData] = useState<{
@@ -1054,7 +1060,7 @@ export default function App() {
         onOpenHelp={() => setIsHelpOpen(true)}
         eventsCount={events.length}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenSummary={() => setIsSummaryOpen(true)}
+        onOpenSummary={handleOpenSummary}
         onOpenRoster={() => setIsRosterOpen(true)}
         onResetGame={() => setIsResetConfirmOpen(true)}
         onSetPeriod={handleSetPeriod}
@@ -1197,6 +1203,10 @@ export default function App() {
                 onClearEvents={handleClearEvents}
                 period={period}
                 totalRegularPeriods={settings.totalRegularPeriods}
+                onOpenTrend={() => {
+                  setIsEventsOpen(false);
+                  handleOpenSummary('trend');
+                }}
               />
             </div>
           </div>
@@ -1218,7 +1228,7 @@ export default function App() {
           onStartNextPeriod={handleStartNextPeriod}
           onOpenSummary={() => {
             setPeriodEndModalData(null);
-            setIsSummaryOpen(true);
+            handleOpenSummary('summary');
           }}
           onClose={() => setPeriodEndModalData(null)}
         />
@@ -1259,6 +1269,7 @@ export default function App() {
         totalRegularPeriods={settings.totalRegularPeriods}
         settings={settings}
         events={events}
+        initialTab={summaryInitialTab}
       />
 
       {/* Operation Guide & Shortcuts Modal */}

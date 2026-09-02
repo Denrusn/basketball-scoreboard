@@ -37,6 +37,7 @@ interface GameSummaryModalProps {
   totalRegularPeriods: number;
   settings: GameSettings;
   events: GameEvent[];
+  initialTab?: 'summary' | 'trend' | 'events';
 }
 
 export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
@@ -48,8 +49,9 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
   totalRegularPeriods,
   settings,
   events,
+  initialTab = 'summary',
 }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'trend' | 'events'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'trend' | 'events'>(initialTab);
   const [copied, setCopied] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
@@ -57,6 +59,13 @@ export const GameSummaryModal: React.FC<GameSummaryModalProps> = ({
 
   const summaryPosterRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync activeTab when modal is reopened with a specific initialTab
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   const periodsList = Array.from(
     { length: Math.max(totalRegularPeriods, period, homeTeam.quarterScores.length) },

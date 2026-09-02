@@ -13,7 +13,8 @@ import {
   Shield,
   Zap,
   Volume2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  TrendingUp
 } from 'lucide-react';
 import { GameEvent, Team } from '../types';
 import { exportPlayByPlayCSV } from '../utils/exportUtils';
@@ -28,6 +29,7 @@ interface EventLogProps {
   panelOpacity?: number;
   period?: number;
   totalRegularPeriods?: number;
+  onOpenTrend?: () => void;
 }
 
 export const EventLog: React.FC<EventLogProps> = ({
@@ -40,6 +42,7 @@ export const EventLog: React.FC<EventLogProps> = ({
   panelOpacity = 80,
   period = 1,
   totalRegularPeriods = 4,
+  onOpenTrend,
 }) => {
   const [filter, setFilter] = useState<'all' | 'home' | 'away' | 'score' | 'stats'>('all');
   const [copied, setCopied] = useState(false);
@@ -106,6 +109,17 @@ export const EventLog: React.FC<EventLogProps> = ({
 
         {/* Action buttons: Undo, Copy, Export CSV, Clear */}
         <div className="flex items-center gap-1.5">
+          {onOpenTrend && (
+            <button
+              onClick={onOpenTrend}
+              title="查看比分趋势走势图"
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg border border-white/5 transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">走势图</span>
+            </button>
+          )}
+
           <button
             onClick={onUndo}
             disabled={!canUndo}

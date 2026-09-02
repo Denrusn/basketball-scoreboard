@@ -46,7 +46,7 @@ interface ScoreboardHeaderProps {
   onOpenHelp?: () => void;
   eventsCount?: number;
   onOpenSettings: () => void;
-  onOpenSummary: () => void;
+  onOpenSummary: (initialTab?: 'summary' | 'trend' | 'events') => void;
   onOpenRoster: () => void;
   onResetGame: () => void;
   onSetPeriod: (period: number) => void;
@@ -501,6 +501,16 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             </button>
           )}
 
+          {/* 3.5 Direct Score Trend & Lead Diff Chart Button (Top Level Instant Access) */}
+          <button
+            onClick={() => onOpenSummary('trend')}
+            title="查看比赛比分趋势图与分差走势波动图"
+            className="h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-2.5 lg:px-3 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10 hover:border-emerald-400/40"
+          >
+            <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">走势图</span>
+          </button>
+
           {/* 4. Match Stats & Events Secondary Menu */}
           <div className="relative">
             <button
@@ -557,7 +567,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
 
                   <button
                     onClick={() => {
-                      onOpenSummary();
+                      onOpenSummary('trend');
                       setActiveDropdown(null);
                     }}
                     className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"

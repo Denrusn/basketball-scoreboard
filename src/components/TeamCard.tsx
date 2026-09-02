@@ -279,32 +279,54 @@ export const TeamCard: React.FC<TeamCardProps> = ({
         </button>
       </div>
 
-      {/* Direct Player Selection Bar (Zero Dropdowns, All Numbers Visible, 1-Click Select) */}
-      <div className="my-1 sm:my-1.5 bg-slate-950/60 p-1 sm:p-1.5 rounded-lg md:rounded-xl border border-white/5 flex items-center gap-1 sm:gap-1.5 shrink-0 overflow-hidden">
-        {/* Label icon */}
-        <div className="hidden xs:flex items-center gap-1 text-slate-400 shrink-0 px-0.5">
-          <Users className="w-3 h-3 md:w-3.5 md:h-3.5 text-slate-400" />
-          <span className="text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap">记分归属:</span>
+      {/* Direct Player Selection Bar (Flat Tiled Jersey Numbers, No Scrollbar, Zero Names) */}
+      <div className="my-1 sm:my-1.5 bg-slate-950/70 p-1.5 sm:p-2 rounded-lg md:rounded-xl border border-white/10 flex flex-col gap-1 shrink-0 shadow-inner">
+        <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold px-0.5">
+          <div className="flex items-center gap-1.5">
+            <Users className="w-3 h-3 text-slate-400 shrink-0" />
+            <span className="text-slate-300">球员选择 (记分/犯规归属):</span>
+            {selectedPlayer ? (
+              <span 
+                style={{ color: primaryColor }}
+                className="font-digital font-black bg-white/5 px-1.5 py-0.2 rounded border border-white/10"
+              >
+                已选 #{selectedPlayer.number} 号
+              </span>
+            ) : (
+              <span className="text-slate-400 font-normal">(全队通用)</span>
+            )}
+          </div>
+
+          {onOpenRoster && (
+            <button
+              type="button"
+              onClick={onOpenRoster}
+              className="text-[10px] text-slate-400 hover:text-amber-300 transition-colors flex items-center gap-0.5 cursor-pointer"
+            >
+              <Plus className="w-2.5 h-2.5" />
+              <span>名单管理</span>
+            </button>
+          )}
         </div>
 
-        {/* Scrollable list of player badges */}
-        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
-          {/* Team General Button (Default Highlight) */}
+        {/* Flat Tiled Jersey Numbers: NO scrollbar, wraps neatly */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 pt-0.5">
+          {/* Team General Button */}
           <button
             type="button"
             onClick={() => setSelectedPlayerId('')}
-            title="记入全队总分 (默认)"
-            className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer border ${
+            title="记入全队总分 (不指定具体个人)"
+            className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer border ${
               selectedPlayerId === ''
-                ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md shadow-amber-500/30 font-black ring-1 ring-amber-300/80'
+                ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md shadow-amber-500/30 font-black ring-1 ring-amber-300'
                 : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 hover:text-white border-white/10'
             }`}
           >
             <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            <span className="whitespace-nowrap">全队通用</span>
+            <span>全队</span>
           </button>
 
-          {/* Individual Player Number Badges */}
+          {/* All Players Flatly Tiled - Pure Numbers Only */}
           {team.players.map((player) => {
             const isSelected = selectedPlayerId === player.id;
             return (
@@ -312,7 +334,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                 key={player.id}
                 type="button"
                 onClick={() => setSelectedPlayerId(isSelected ? '' : player.id)}
-                title={`${player.name || `球员 #${player.number}`} (得分 ${player.points} | 篮板 ${player.rebounds || 0} | 助攻 ${player.assists || 0} | 犯规 ${player.fouls})`}
+                title={`#${player.number}号 (得分 ${player.points} | 篮板 ${player.rebounds || 0} | 助攻 ${player.assists || 0} | 犯规 ${player.fouls})`}
                 style={
                   isSelected
                     ? {
@@ -323,56 +345,27 @@ export const TeamCard: React.FC<TeamCardProps> = ({
                       }
                     : undefined
                 }
-                className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer border ${
+                className={`px-2 sm:px-2.5 py-1 rounded-md md:rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer border ${
                   isSelected
-                    ? 'font-black ring-1 ring-white/80'
-                    : 'bg-slate-900/90 text-slate-200 hover:bg-slate-800 border-white/10 hover:border-white/20'
+                    ? 'font-black ring-2 ring-white/90 scale-105 z-10'
+                    : 'bg-slate-900/90 text-slate-200 hover:bg-slate-800 hover:border-white/30 border-white/10'
                 }`}
               >
-                <span className="font-digital text-[11px] sm:text-xs font-black">
+                <span className="font-digital text-xs sm:text-sm font-black">
                   #{player.number}
                 </span>
-                {player.name && (
-                  <span className="hidden md:inline text-[10px] truncate max-w-[50px] opacity-90">
-                    {player.name}
-                  </span>
-                )}
                 <span
-                  className={`text-[9px] sm:text-[10px] font-digital tabular-nums px-1 py-0.2 rounded ${
+                  className={`text-[9px] font-digital tabular-nums px-1 py-0.2 rounded ${
                     isSelected
-                      ? 'bg-slate-950/25 text-slate-950 font-black'
+                      ? 'bg-slate-950/30 text-slate-950 font-black'
                       : 'bg-slate-800 text-slate-400'
                   }`}
                 >
                   {player.points}分
                 </span>
-                {(player.rebounds > 0 || player.assists > 0) && (
-                  <span
-                    className={`hidden lg:inline text-[8px] font-digital tabular-nums px-1 py-0.2 rounded ${
-                      isSelected
-                        ? 'bg-slate-950/20 text-slate-950'
-                        : 'bg-slate-800/80 text-amber-300/80'
-                    }`}
-                  >
-                    {player.rebounds || 0}板/{player.assists || 0}助
-                  </span>
-                )}
               </button>
             );
           })}
-
-          {/* Quick Roster Modal trigger if provided */}
-          {onOpenRoster && (
-            <button
-              type="button"
-              onClick={onOpenRoster}
-              title="添加或管理球员名单"
-              className="px-1.5 sm:px-2 py-1 rounded-md md:rounded-lg text-[10px] sm:text-xs font-bold bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-dashed border-white/15 transition-colors shrink-0 flex items-center gap-0.5 cursor-pointer whitespace-nowrap"
-            >
-              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              <span>名单</span>
-            </button>
-          )}
         </div>
       </div>
 
