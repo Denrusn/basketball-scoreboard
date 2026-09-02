@@ -3,18 +3,18 @@
   "name": "篮球比赛记分板 (Basketball Scoreboard)",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "favicon.svg",
       "type": "image/svg+xml",
       "sizes": "any"
     },
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "type": "image/svg+xml",
       "sizes": "192x192 512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "background_color": "#020617",
   "theme_color": "#020617",
   "display": "standalone",

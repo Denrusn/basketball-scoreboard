@@ -85,6 +85,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'period' | 'sound' | 'stats' | 'display' | null>(null);
+  const [logoImgError, setLogoImgError] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const wakeLockRef = useRef<any>(null);
 
@@ -206,8 +207,23 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
         {/* Left: App Brand & Period Dropdown Selector */}
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 min-w-0">
           <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg md:rounded-xl overflow-hidden shadow-md shrink-0 border border-amber-500/30">
-              <img src="/icon.svg" alt="篮球记分板 Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg md:rounded-xl overflow-hidden shadow-md shrink-0 border border-amber-500/30 bg-slate-900 flex items-center justify-center">
+              {!logoImgError ? (
+                <img
+                  src="./icon.svg"
+                  alt="篮球记分板 Logo"
+                  className="w-full h-full object-cover"
+                  onError={() => setLogoImgError(true)}
+                />
+              ) : (
+                <svg viewBox="0 0 32 32" className="w-full h-full p-1" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="16" cy="16" r="14" fill="#ea580c" stroke="#9a3412" strokeWidth="1.5" />
+                  <path d="M16 2C16 16 16 30" stroke="#431407" strokeWidth="1.5" />
+                  <path d="M2 16C16 16 30 16" stroke="#431407" strokeWidth="1.5" />
+                  <path d="M6 6C12 11 12 21 6 26" stroke="#431407" strokeWidth="1.5" />
+                  <path d="M26 6C20 11 20 21 26 26" stroke="#431407" strokeWidth="1.5" />
+                </svg>
+              )}
             </div>
             <div className="hidden md:block min-w-0 shrink-0">
               <h1 className="text-xs sm:text-sm md:text-base font-black text-white tracking-wide leading-none whitespace-nowrap">
