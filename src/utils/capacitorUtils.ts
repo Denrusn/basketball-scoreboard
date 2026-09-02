@@ -1,6 +1,3 @@
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { ScreenOrientation } from '@capacitor/screen-orientation';
-
 /**
  * Checks if the application is running inside a Capacitor native container (Android or iOS)
  */
@@ -10,53 +7,33 @@ export const isCapacitorNative = (): boolean => {
     : false;
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const applyNativeImmersive = async (): Promise<void> => {
-  try {
-    await StatusBar.hide();
-  } catch {
-    try {
-      await StatusBar.setOverlaysWebView({ overlay: true });
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#00000000' });
-    } catch {
-      // Ignore if not supported on the specific device
-    }
-  }
-
-  try {
-    await ScreenOrientation.lock({ orientation: 'landscape' });
-  } catch {
-    // Ignore
-  }
-};
-
 /**
- * Initializes mobile full-screen immersive mode and status bar handling
+ * Initializes mobile full-screen immersive mode.
+ *
+ * Note: The immersive fullscreen & landscape lock are implemented natively:
+ *  - Android: MainActivity.java (WindowInsetsControllerCompat hides system bars,
+ *    FLAG_KEEP_SCREEN_ON, landscape orientation)
+ *  - iOS: Info.plist (UIStatusBarHidden, UIViewControllerBasedStatusBarAppearance=false,
+ *    landscape-only supported orientations)
+ *
+ * Here we only need to force a relayout so the web content fills the new viewport.
  */
 export const initMobileImmersiveMode = async (): Promise<void> => {
   if (!isCapacitorNative()) return;
 
-  await applyNativeImmersive();
-
-  // Some Android devices restore system bars after first paint.
-  // Re-apply once after the layout stabilizes.
-  await sleep(350);
-  await applyNativeImmersive();
+  // Some Android devices restore system bars after first paint; the native
+  // MainActivity re-hides them on onWindowFocusChanged. Just nudge layout.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  window.dispatchEvent(new Event('resize'));
 };
 
 /**
  * Toggle full screen in both native Capacitor app and browser
  */
 export const requestAppFullScreen = async (): Promise<boolean> => {
+  // In the native container the app is already fullscreen & immersive (native layer).
   if (isCapacitorNative()) {
-    try {
-      await applyNativeImmersive();
-      return true;
-    } catch (err) {
-      console.warn('Native fullscreen request error:', err);
-    }
+    return true;
   }
 
   // Browser Fullscreen API
@@ -78,19 +55,6 @@ export const requestAppFullScreen = async (): Promise<boolean> => {
  * Exit full screen in both native app and browser
  */
 export const exitAppFullScreen = async (): Promise<void> => {
-  if (isCapacitorNative()) {
-    try {
-      await ScreenOrientation.unlock();
-    } catch {
-      // Ignore
-    }
-    try {
-      await StatusBar.show();
-    } catch {
-      // Ignore
-    }
-  }
-
   if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
     try {
       if (document.exitFullscreen) {

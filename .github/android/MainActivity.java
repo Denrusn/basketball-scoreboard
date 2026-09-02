@@ -1,5 +1,6 @@
 package com.basketball.scoreboard;
 
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -15,6 +16,9 @@ public class MainActivity extends BridgeActivity {
 
         // Keep screen on during match scoreboard display
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // Force landscape orientation for scoreboard use
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         // Hide Android System Status Bar and Navigation Bar (Immersive Sticky Fullscreen)
         hideSystemUI();
