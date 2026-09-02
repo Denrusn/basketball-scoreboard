@@ -26,33 +26,33 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in select-none">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl sm:rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in select-none">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl max-h-[96vh] landscape:max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-slate-950/60 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black shrink-0">
-              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+        <div className="px-3 sm:px-4 md:px-5 py-2 sm:py-3 landscape:py-1.5 landscape:px-3 border-b border-white/10 bg-slate-950/60 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 landscape:w-5 landscape:h-5 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black shrink-0">
+              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 landscape:w-3 landscape:h-3" />
             </div>
-            <div>
-              <h2 className="text-sm sm:text-base md:text-lg font-black text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm md:text-base font-bold text-white truncate flex items-center gap-2">
                 技术台操作指引与规则手册
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-400">
+              <p className="text-[10px] sm:text-xs text-slate-400 truncate hidden sm:block landscape:hidden md:landscape:block">
                 支持专业 FIBA 比赛规则、球员个人实时统计、单节抢分目标制与全键盘控制
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+            className="p-1 sm:p-1.5 landscape:p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer shrink-0 ml-2"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 landscape:w-3.5 landscape:h-3.5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 text-slate-200 text-xs sm:text-sm">
+        <div className="p-2.5 sm:p-4 landscape:p-2.5 overflow-y-auto space-y-2.5 sm:space-y-4 flex-1 text-slate-200 text-xs sm:text-sm">
           {/* 1. Keyboard Shortcuts */}
           <div className="bg-slate-950/60 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-white/5 space-y-3">
             <h3 className="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
@@ -168,7 +168,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between gap-2 shrink-0">
+        <div className="p-2 sm:p-3 md:p-4 landscape:py-1.5 landscape:px-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between gap-2 shrink-0">
           {onOpenSettings && (
             <button
               type="button"
@@ -176,16 +176,16 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
                 onClose();
                 onOpenSettings();
               }}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span>打开规则与外观设置</span>
+              <span>打开设置</span>
             </button>
           )}
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-xs transition-colors cursor-pointer ml-auto"
+            className="px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-xs transition-colors cursor-pointer ml-auto"
           >
             知道了 / 关闭
           </button>

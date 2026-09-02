@@ -53,62 +53,64 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[96vh] landscape:max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-500/30 font-bold">
+        <div className="px-3 sm:px-4 md:px-5 py-2 sm:py-3 landscape:py-1.5 landscape:px-3 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/50">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 landscape:w-5 landscape:h-5 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-500/30 font-bold shrink-0 text-xs sm:text-sm">
               👥
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">球员名单与实时数据统计</h2>
-              <p className="text-xs text-slate-400">管理双方球队出场球员、个人得分与犯规数据</p>
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm md:text-base font-bold text-white truncate">球员名单与实时数据统计</h2>
+              <p className="text-[10px] sm:text-xs text-slate-400 truncate hidden sm:block landscape:hidden md:landscape:block">
+                管理双方球队出场球员、个人得分与犯规数据
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            className="p-1 sm:p-1.5 landscape:p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer shrink-0 ml-2"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 landscape:w-3.5 landscape:h-3.5" />
           </button>
         </div>
 
         {/* Team Selector Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 p-2 gap-2">
+        <div className="flex border-b border-slate-800 bg-slate-950/60 p-1.5 sm:p-2 landscape:py-1 gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-1.5 sm:py-2.5 landscape:py-1 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === 'home'
                 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <span>主队: {homeTeam.name}</span>
-            <span className="font-digital text-base font-black">({homeTeam.score}分)</span>
+            <span className="truncate">主队: {homeTeam.name}</span>
+            <span className="font-digital text-sm sm:text-base font-black">({homeTeam.score}分)</span>
           </button>
           <button
             onClick={() => setActiveTab('away')}
-            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-1.5 sm:py-2.5 landscape:py-1 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === 'away'
                 ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <span>客队: {awayTeam.name}</span>
-            <span className="font-digital text-base font-black">({awayTeam.score}分)</span>
+            <span className="truncate">客队: {awayTeam.name}</span>
+            <span className="font-digital text-sm sm:text-base font-black">({awayTeam.score}分)</span>
           </button>
         </div>
 
         {/* Modal Body: Player Table & Add Form */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 landscape:p-2.5 space-y-2.5 sm:space-y-3.5">
           {/* Add New Player Form */}
           <form
             onSubmit={handleAddPlayer}
-            className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 flex flex-wrap items-center gap-2 text-xs"
+            className="bg-slate-950/80 p-2 sm:p-3 landscape:py-1.5 rounded-xl border border-slate-800/80 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs"
           >
-            <span className="text-slate-300 font-semibold flex items-center gap-1">
-              <UserPlus className="w-4 h-4 text-emerald-400" />
+            <span className="text-slate-300 font-semibold flex items-center gap-1 text-[11px] sm:text-xs">
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               添加球员:
             </span>
             <input
@@ -118,18 +120,18 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
               placeholder="球衣号 (如 23)"
               value={newPlayerNumber}
               onChange={(e) => setNewPlayerNumber(e.target.value)}
-              className="w-24 bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              className="w-20 sm:w-24 bg-slate-900 border border-slate-700 px-2 py-1 sm:py-1.5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 text-xs"
             />
             <input
               type="text"
               placeholder="球员姓名 (如 詹姆斯)"
               value={newPlayerName}
               onChange={(e) => setNewPlayerName(e.target.value)}
-              className="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              className="flex-1 min-w-[120px] bg-slate-900 border border-slate-700 px-2 py-1 sm:py-1.5 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 text-xs"
             />
             <button
               type="submit"
-              className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold flex items-center gap-1 transition-colors"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold flex items-center gap-1 transition-colors text-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               添加
@@ -292,11 +294,11 @@ export const RosterStatsModal: React.FC<RosterStatsModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400">
-          <span>提示：在此处点击记分按钮将同步累加至比分板与流水日志。</span>
+        <div className="p-2 sm:p-3 md:p-4 landscape:py-1.5 landscape:px-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400 shrink-0">
+          <span className="truncate text-[10px] sm:text-xs">提示：点击记分按钮同步累加至比分板与流水日志。</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors"
+            className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs transition-colors cursor-pointer shrink-0 ml-2"
           >
             完成
           </button>

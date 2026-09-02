@@ -206,8 +206,8 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
         {/* Left: App Brand & Period Dropdown Selector */}
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 min-w-0">
           <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg md:rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black text-xs sm:text-sm md:text-base shadow-md shrink-0">
-              🏀
+            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 rounded-lg md:rounded-xl overflow-hidden shadow-md shrink-0 border border-amber-500/30">
+              <img src="/icon.svg" alt="篮球记分板 Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="hidden md:block min-w-0 shrink-0">
               <h1 className="text-xs sm:text-sm md:text-base font-black text-white tracking-wide leading-none whitespace-nowrap">
@@ -460,46 +460,24 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
             )}
           </div>
 
-          {/* 3. Direct Play-by-Play Events Quick Button */}
-          {onOpenEvents && (
-            <button
-              onClick={onOpenEvents}
-              title="查看实时比赛流水记录"
-              className="h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-2.5 lg:px-3 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10 hover:border-amber-400/40"
-            >
-              <History className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
-              <span className="hidden sm:inline whitespace-nowrap">流水</span>
-              {eventsCount > 0 && (
-                <span className="bg-amber-400 text-slate-950 text-[9px] md:text-[10px] font-digital font-black px-1 rounded-full">
-                  {eventsCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* 3.5 Direct Score Trend & Lead Diff Chart Button (Top Level Instant Access) */}
-          <button
-            onClick={() => onOpenSummary('trend')}
-            title="查看比赛比分趋势图与分差走势波动图"
-            className="h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-2.5 lg:px-3 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10 hover:border-emerald-400/40"
-          >
-            <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">走势图</span>
-          </button>
-
-          {/* 4. Match Stats & Events Secondary Menu */}
+          {/* 3. Match Stats & Events Secondary Menu */}
           <div className="relative">
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'stats' ? null : 'stats')}
               title="比赛统计与记录"
-              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-1.5 sm:px-2 md:px-3 lg:px-3.5 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer ${
+              className={`h-7 sm:h-8 md:h-9 lg:h-10 px-2 sm:px-2.5 md:px-3 lg:px-3.5 rounded-lg md:rounded-xl text-[11px] sm:text-xs md:text-sm font-bold flex items-center gap-1 transition-colors border shrink-0 cursor-pointer ${
                 activeDropdown === 'stats'
                   ? 'bg-amber-500 text-slate-950 border-amber-400'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-white/10'
               }`}
             >
               <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 shrink-0" />
-              <span className="hidden md:inline whitespace-nowrap">数据</span>
+              <span className="inline whitespace-nowrap">数据</span>
+              {eventsCount > 0 && (
+                <span className="bg-amber-400 text-slate-950 text-[9px] md:text-[10px] font-digital font-black px-1 rounded-full">
+                  {eventsCount}
+                </span>
+              )}
               <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
             </button>
 
@@ -509,6 +487,34 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                   比赛数据与报告
                 </div>
                 <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => {
+                      onOpenSummary('trend');
+                      setActiveDropdown(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      <span>比赛战报与统计</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400/90 font-normal">走势/报告</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onOpenRoster();
+                      setActiveDropdown(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-sky-400" />
+                      <span>球员名单与数据</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">得分/犯规</span>
+                  </button>
+
                   {onOpenEvents && (
                     <button
                       onClick={() => {
@@ -526,34 +532,6 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       </span>
                     </button>
                   )}
-
-                  <button
-                    onClick={() => {
-                      onOpenRoster();
-                      setActiveDropdown(null);
-                    }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-sky-400" />
-                      <span>球员名单与数据</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400">得分/犯规</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      onOpenSummary('trend');
-                      setActiveDropdown(null);
-                    }}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-amber-400" />
-                      <span>比分趋势图与战报</span>
-                    </span>
-                    <span className="text-[10px] text-amber-400/80 font-normal">走势/导出</span>
-                  </button>
                 </div>
               </div>
             )}
@@ -595,7 +573,7 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       </div>
                       <input
                         type="range"
-                        min="20"
+                        min="10"
                         max="100"
                         step="5"
                         value={panelOpacity}
@@ -685,6 +663,21 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
                       <span>重新开局 (重置)</span>
                     </span>
                     <span className="text-[10px] text-rose-400">清空比分</span>
+                  </button>
+
+                  {/* Fullscreen Option */}
+                  <button
+                    onClick={() => {
+                      toggleFullscreen();
+                      setActiveDropdown(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      {isFullscreen ? <Minimize className="w-4 h-4 text-amber-400" /> : <Maximize className="w-4 h-4 text-amber-400" />}
+                      <span>{isFullscreen ? '退出全屏显示' : '全屏显示 (防息屏)'}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">{isFullscreen ? '已全屏' : '点击全屏'}</span>
                   </button>
 
                   {/* Data Safety & Anti-refresh indicator */}

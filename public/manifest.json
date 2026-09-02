@@ -1,0 +1,23 @@
+{
+  "short_name": "篮球记分板",
+  "name": "篮球比赛记分板 (Basketball Scoreboard)",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "display": "standalone",
+  "orientation": "any",
+  "categories": ["sports", "utilities"]
+}

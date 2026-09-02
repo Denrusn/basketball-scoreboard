@@ -55,7 +55,7 @@ const INITIAL_SETTINGS: GameSettings = {
   maxTimeouts: 5,
   soundEnabled: true,
   voiceAnnouncementsEnabled: true,
-  panelOpacity: 75,
+  panelOpacity: 30,
 };
 
 const INITIAL_HOME_TEAM: Team = {
@@ -1115,7 +1115,7 @@ export default function App() {
           </div>
 
           {/* Center Digital Timers Column */}
-          <div className="w-full landscape:w-60 landscape:sm:w-72 landscape:md:w-80 landscape:lg:w-96 landscape:xl:w-[420px] landscape:2xl:w-[480px] lg:w-96 xl:w-[420px] 2xl:w-[480px] shrink-0 flex flex-col justify-between gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 h-full min-h-0">
+          <div className="w-full landscape:w-44 landscape:sm:w-52 landscape:md:w-60 landscape:lg:w-72 landscape:xl:w-80 landscape:2xl:w-96 lg:w-72 xl:w-80 2xl:w-96 shrink-0 flex flex-col justify-between gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3.5 h-full min-h-0">
             <GameClock
               tenthsLeft={gameClockTenths}
               isRunning={isGameClockRunning}
