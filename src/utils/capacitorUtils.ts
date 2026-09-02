@@ -10,18 +10,13 @@ export const isCapacitorNative = (): boolean => {
     : false;
 };
 
-/**
- * Initializes mobile full-screen immersive mode and status bar handling
- */
-export const initMobileImmersiveMode = async (): Promise<void> => {
-  if (!isCapacitorNative()) return;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const applyNativeImmersive = async (): Promise<void> => {
   try {
-    // 1. Hide the Android/iOS status bar for true full screen
     await StatusBar.hide();
-  } catch (err) {
+  } catch {
     try {
-      // Fallback: set transparent dark status bar overlay
       await StatusBar.setOverlaysWebView({ overlay: true });
       await StatusBar.setStyle({ style: Style.Dark });
       await StatusBar.setBackgroundColor({ color: '#00000000' });
@@ -30,13 +25,25 @@ export const initMobileImmersiveMode = async (): Promise<void> => {
     }
   }
 
-  // 2. Lock to landscape on mobile if preferred, or allow full rotation
   try {
-    // We keep orientation fluid or auto-landscape on tablets
-    // ScreenOrientation.lock({ orientation: 'landscape' });
+    await ScreenOrientation.lock({ orientation: 'landscape' });
   } catch {
     // Ignore
   }
+};
+
+/**
+ * Initializes mobile full-screen immersive mode and status bar handling
+ */
+export const initMobileImmersiveMode = async (): Promise<void> => {
+  if (!isCapacitorNative()) return;
+
+  await applyNativeImmersive();
+
+  // Some Android devices restore system bars after first paint.
+  // Re-apply once after the layout stabilizes.
+  await sleep(350);
+  await applyNativeImmersive();
 };
 
 /**
@@ -45,12 +52,7 @@ export const initMobileImmersiveMode = async (): Promise<void> => {
 export const requestAppFullScreen = async (): Promise<boolean> => {
   if (isCapacitorNative()) {
     try {
-      await StatusBar.hide();
-      try {
-        await ScreenOrientation.lock({ orientation: 'landscape' });
-      } catch {
-        // Ignore rotation lock error
-      }
+      await applyNativeImmersive();
       return true;
     } catch (err) {
       console.warn('Native fullscreen request error:', err);
@@ -79,6 +81,11 @@ export const exitAppFullScreen = async (): Promise<void> => {
   if (isCapacitorNative()) {
     try {
       await ScreenOrientation.unlock();
+    } catch {
+      // Ignore
+    }
+    try {
+      await StatusBar.show();
     } catch {
       // Ignore
     }
