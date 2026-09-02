@@ -49,8 +49,54 @@ jobs:
         run: |
           npx cap add android || true
           npx cap sync android
+          
+          # Configure Android MainActivity for full-screen immersive mode (hide system status & nav bars)
+          MAIN_ACTIVITY=$(find android -name "MainActivity.java" 2>/dev/null | head -1)
+          if [ -n "$MAIN_ACTIVITY" ]; then
+            echo "Configuring Android Immersive Fullscreen Mode in $MAIN_ACTIVITY"
+            cat << 'EOF' > "$MAIN_ACTIVITY"
+package com.basketball.scoreboard;
+
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Keep screen on during match scoreboard display
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        // Hide Android System Status Bar and Navigation Bar (Immersive Sticky Fullscreen)
+        hideSystemUI();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemUI();
+        }
+    }
+
+    private void hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    }
+}
+EOF
+          fi
 
       - name: 🔨 Build Android APK with Gradle
+
         working-directory: android
         run: |
           chmod +x gradlew

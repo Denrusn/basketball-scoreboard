@@ -22,6 +22,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Team, GameSettings } from '../types';
+import { requestAppFullScreen, exitAppFullScreen, isCapacitorNative } from '../utils/capacitorUtils';
 
 interface ScoreboardHeaderProps {
   period: number;
@@ -180,42 +181,17 @@ export const ScoreboardHeader: React.FC<ScoreboardHeaderProps> = ({
   }, [requestScreenWakeLock, releaseScreenWakeLock]);
 
   const toggleFullscreen = async () => {
-    if (!document.fullscreenElement) {
-      try {
-        const rootEl = document.documentElement;
-        if (rootEl.requestFullscreen) {
-          await rootEl.requestFullscreen();
-        } else if ((rootEl as any).webkitRequestFullscreen) {
-          await (rootEl as any).webkitRequestFullscreen();
-        }
-        setIsFullscreen(true);
-
-        try {
-          const screenObj = screen as any;
-          if (screenObj.orientation && typeof screenObj.orientation.lock === 'function') {
-            await screenObj.orientation.lock('landscape');
-          } else if (typeof screenObj.unlockOrientation === 'function') {
-            screenObj.unlockOrientation('landscape');
-          }
-        } catch (orientationErr) {
-          console.info('Screen orientation lock note:', orientationErr);
-        }
-      } catch (err) {
-        console.warn('Fullscreen request failed:', err);
-      }
+    if (!isFullscreen && !document.fullscreenElement) {
+      await requestAppFullScreen();
+      setIsFullscreen(true);
+      await requestScreenWakeLock();
     } else {
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
-        }
-        setIsFullscreen(false);
-      } catch (err) {
-        console.warn('Exit fullscreen failed:', err);
-      }
+      await exitAppFullScreen();
+      setIsFullscreen(false);
+      await releaseScreenWakeLock();
     }
   };
+
 
   const periodsList = Array.from(
     { length: Math.max(totalRegularPeriods, period) },
