@@ -23,16 +23,16 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js (Node 22 LTS for Capacitor 7)
+      - name: 🟢 Setup Node.js (Node 22 LTS for Capacitor 8)
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: ☕ Setup Java JDK 17
+      - name: ☕ Setup Java JDK 21 (Capacitor 8 requires Java 21)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: 📦 Install Dependencies
         run: npm install
@@ -70,7 +70,7 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js (Node 22 LTS for Capacitor 7)
+      - name: 🟢 Setup Node.js (Node 22 LTS for Capacitor 8)
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -86,32 +86,48 @@ jobs:
           npx cap add ios || true
           npx cap sync ios
 
-      - name: 🔨 Build iOS Project (Simulator / Unsigned App)
+      - name: 🔨 Build iOS Project (Unsigned App via SPM, no CocoaPods)
         working-directory: ios/App
         run: |
-          pod install
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            build
+          # Capacitor 8 uses Swift Package Manager; fall back to CocoaPods only if Podfile exists
+          if [ -f "Podfile" ]; then
+            pod install
+            xcodebuild \
+              -workspace App.xcworkspace \
+              -scheme App \
+              -configuration Release \
+              -sdk iphoneos \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              build
+          else
+            xcodebuild \
+              -project App.xcodeproj \
+              -scheme App \
+              -configuration Release \
+              -sdk iphoneos \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY="" \
+              build
+          fi
 
       - name: 📦 Compress iOS App
         run: |
-          mkdir -p ios/App/build/Release-iphoneos
-          find ios/App -name "*.app" -type d -exec zip -r ios/BasketballScoreboard-iOS.zip {} + || true
-          if [ ! -f ios/BasketballScoreboard-iOS.zip ]; then
-            cd ios/App
-            zip -r ../BasketballScoreboard-iOS.zip .
+          APP_DIR=$(find ios/App/build -name "App.app" -type d 2>/dev/null | head -1)
+          if [ -z "$APP_DIR" ]; then
+            echo "App.app not found in ios/App/build"
+            exit 1
           fi
+          cd "$(dirname "$APP_DIR")"
+          zip -r BasketballScoreboard-iOS.zip App.app
+          mv BasketballScoreboard-iOS.zip ../../../../BasketballScoreboard-iOS.zip
 
       - name: 🚀 Upload iOS App Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BasketballScoreboard-iOS-App
           path: ios/BasketballScoreboard-iOS.zip
+          if-no-files-found: error
           retention-days: 14
